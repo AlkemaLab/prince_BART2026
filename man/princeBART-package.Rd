@@ -42,4 +42,9 @@ conditional complier effects CATE_C(x) across covariate values.
 \author{
 \strong{Maintainer}: Lucas Godoy Garraza \email{lgodoygarraz@umass.edu} (\href{https://orcid.org/0000-0001-8426-9485}{ORCID})
 
+Authors:
+\itemize{
+  \item Lucas Godoy Garraza \email{lgodoygarraz@umass.edu} (\href{https://orcid.org/0000-0001-8426-9485}{ORCID})
+}
+
 }

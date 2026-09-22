@@ -16,27 +16,35 @@ export(prince_BART)
 export(segment_heterogeneity)
 importFrom(Formula,Formula)
 importFrom(abind,abind)
-importFrom(data.table,":=")
-importFrom(data.table,.N)
-importFrom(data.table,.SD)
-importFrom(dbarts,bart2)
-importFrom(dbarts,dbarts)
-importFrom(dbarts,dbartsControl)
-importFrom(dbarts,dbartsData)
-importFrom(future,multisession)
-importFrom(future,plan)
+importFrom(data.table,
+  ":=",
+  .N,
+  .SD
+)
+importFrom(dbarts,
+  bart2,
+  dbarts,
+  dbartsControl,
+  dbartsData
+)
+importFrom(future,
+  multisession,
+  plan
+)
 importFrom(future.apply,future_lapply)
 importFrom(methods,new)
 importFrom(parallel,detectCores)
 importFrom(posterior,as_draws_array)
-importFrom(stats,coef)
-importFrom(stats,fitted)
-importFrom(stats,formula)
-importFrom(stats,lm)
-importFrom(stats,model.frame)
-importFrom(stats,model.matrix)
-importFrom(stats,model.response)
-importFrom(stats,pnorm)
-importFrom(stats,qnorm)
-importFrom(stats,rbinom)
+importFrom(stats,
+  coef,
+  fitted,
+  formula,
+  lm,
+  model.frame,
+  model.matrix,
+  model.response,
+  pnorm,
+  qnorm,
+  rbinom
+)
 importFrom(utils,getFromNamespace)

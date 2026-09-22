@@ -1,0 +1,45 @@
+---
+title: "Analysis of user-interface functions and Set-up test environment"
+author: "Zekai"
+date: last-modified
+format: 
+  html:
+    toc: true
+    code-fold: true
+---
+
+# user-interface analysis
+
+## prince_bart class
+
+This is the primary fit class. It contains the stored BART trees (for prediction i guess?), two 4D arrays in the form of (iteration, chain, variable, subject) which stored the posterior stratus samples and probablities.
+
+## coef() pipeline
+
+The coef.prince_bart() function calls coef_prince_bart_binary() if binary, which then calls matt_c() if we want the average treatment effect for the treated among compliers, and mate_c() if not. these two functions will call a key function get_mix_tau(), which is the core function to extract values from posterior draws.
+
+## get_mix_tau() analysis
+
+This is one of the weak points since a lot of 4D arrays were used. basically, treated is the treatment of each subject, and only the treated (or all subjects if treated=null) will be extracted. then the variables for each iteration, chain, for both p_a (P(G=Always taker)) and p_n variables, for the selected subjects are included. p_c is calculated from p_a and p_n. The three arrays are then bind together, then a mean is called for each strata.
+
+# AI assisted robustness analysis
+
+I used AI to generate a complete robustness analysis of the package, which identified a lot of problems. The top priority ones are the ordinal and general BART ones. I am still looking into that.
+
+# testthat environment
+The testthat environment is now set-up and several tests are in place to reproduce some errors identified by AI. 
+
+
+# additional problems found
+
+## 1
+
+The documentation of the main function prince_BART() uses a dataset called "mydata", but the package does not contain this dataset.
+
+# planned improvements:
+
+## verify and solve all bugs identified by AI 
+
+## re-organize the functions to different files.
+
+## create a function for simulating datasets, both used for testing and examples
