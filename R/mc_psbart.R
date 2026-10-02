@@ -276,8 +276,8 @@ resolve_and_validate_uptake <- function(W, uptake_type) {
 #' plan(multisession, workers = 4)
 #'
 #' fit <- prince_BART(
-#'   Y ~ X1 + X2 + X3 | Z | W,
-#'   data = mydata,
+#'   Y ~ x1_1 + x2_1 | Z | W,
+#'   data = ps_simulate_data(seed = 1)$data,
 #'   uptake_type = "auto",
 #'   n_chains = 4,
 #'   n_warmup = 1000,
