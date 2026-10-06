@@ -43,14 +43,9 @@ already appended as the last column.}
 \item{n_initial}{Number of initial iterations using MoM offsets (internal, default: 0).}
 }
 \value{
-A list containing:
-\item{imputed}{Array of imputed compliance class memberships with dimensions
-(n_samples, n, 2) and named variables: "nt" (never-takers), "at" (always-takers)}
-\item{probs}{Array of posterior probabilities and outcome means with dimensions
-(n_samples, n, 6) and named variables: "p_a" (P(always-taker)), "p_n" (P(never-taker)),
-"m_y0c" (\eqn{E[Y(0) \mid complier]}), "m_y1c" (\eqn{E[Y(1) \mid complier]}),
-"m_y0n" (\eqn{E[Y(0) \mid never-taker]}), "m_y1a" (\eqn{E[Y(1) \mid always-taker]})}
-\item{trees}{Tree structures if \code{save_trees = TRUE}}
+A list of iteration-by-unit matrices \code{nt}, \code{at},
+\code{p_a}, \code{p_n}, \code{m_y0c}, \code{m_y1c}, \code{m_y0n},
+\code{m_y1a}, plus a \code{trees} table when requested.
 }
 \description{
 Internal function that fits a single chain of the principal stratification

@@ -82,14 +82,11 @@ sensitivity analysis.}
 \item{verbose}{Logical; print progress messages (default: FALSE).}
 }
 \value{
-A list of class \code{"prince_bart"} containing posterior draws from
-all chains, including:
+A list of class \code{"prince_bart"} containing:
 \itemize{
-\item \code{imp}: Imputed latent quantities
-(iteration x chain x variable x unit).
-\item \code{probs}: Posterior draws of probabilities/outcome means.
-\item \code{check}: Ordinal diagnostic array (ordinal mode only).
-\item \code{trees}: Fitted BART trees (if \code{keep_trees = TRUE}).
+\item \code{chains}: One list per MCMC chain. Each named draw is an
+iteration-by-unit matrix. Each chain also contains a \code{trees}
+table with iteration and model labels if \code{keep_trees = TRUE}.
 \item \code{data}: Stored input data, including \code{X_model}
 (processed covariates used by the fitted model), \code{X_raw}
 (raw covariates when available), \code{X} (compatibility alias to

@@ -4,10 +4,10 @@
 \alias{get_mix_tau}
 \title{Compute Mixed Treatment Effects}
 \usage{
-get_mix_tau(p_arr, treated = NULL)
+get_mix_tau(chains, treated = NULL)
 }
 \arguments{
-\item{p_arr}{4D probability array from prince_bart fit.}
+\item{chains}{List of per-chain draw matrices from a prince_bart fit.}
 
 \item{treated}{Optional logical vector indicating treated units.}
 }
@@ -16,6 +16,6 @@ List with strata probabilities and mean effects as draws arrays.
 }
 \description{
 Internal function to compute mixture-based estimands from posterior
-probability arrays.
+per-chain posterior matrices.
 }
 \keyword{internal}

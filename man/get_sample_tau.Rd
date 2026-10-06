@@ -4,12 +4,12 @@
 \alias{get_sample_tau}
 \title{Compute Sample-Based Treatment Effects}
 \usage{
-get_sample_tau(imp_g, imp_o, treated = NULL, include_corr = TRUE)
+get_sample_tau(chains, imp_o, treated = NULL, include_corr = TRUE)
 }
 \arguments{
-\item{imp_g}{Imputed compliance class array.}
+\item{chains}{List of per-chain draw matrices.}
 
-\item{imp_o}{Imputed potential outcomes array.}
+\item{imp_o}{List of per-chain potential-outcome matrices.}
 
 \item{treated}{Optional logical vector indicating treated units.}
 

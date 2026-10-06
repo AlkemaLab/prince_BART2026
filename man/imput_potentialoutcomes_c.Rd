@@ -10,8 +10,7 @@ imput_potentialoutcomes_c(prince_bart_fit)
 \item{prince_bart_fit}{A fitted object from \code{prince_BART}.}
 }
 \value{
-A 4D array with dimensions (iteration, chain, variable, unit)
-containing imputed potential outcomes:
+A list of chains, each containing iteration-by-unit matrices:
 \item{y0}{Imputed Y(0) for compliers}
 \item{y1}{Imputed Y(1) for compliers}
 \item{cy0}{Imputed Y(0) with induced correlation}

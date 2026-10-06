@@ -18,7 +18,7 @@
   monotonicity = TRUE,
   rho = 0,
   save_trees = TRUE,
-  save_trees_interval = 10L,
+  save_trees_interval = 1L,
   verbose = FALSE,
   ...
 )
@@ -60,12 +60,9 @@ constructing candidate strata.}
 \item{...}{Unused.}
 }
 \value{
-A list with elements:
-\item{imputed}{Array \code{(n_samples, n, 2)} for sampled \code{w0}, \code{w1}.}
-\item{probs}{Array \code{(n_samples, n, 2)} for \code{m_y0}, \code{m_y1}.}
-\item{check}{Array \code{(n_samples, n, 2)} with posterior predictive
-draws for \code{w0}, \code{w1} diagnostics.}
-\item{trees}{Tree structures when \code{save_trees = TRUE}.}
+A list of iteration-by-unit matrices \code{w0}, \code{w1},
+\code{m_y0}, \code{m_y1}, \code{check_w0}, and \code{check_w1}, plus a
+\code{trees} table when requested.
 }
 \description{
 Internal function that fits one MCMC chain of the ordinal principal

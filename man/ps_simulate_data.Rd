@@ -69,15 +69,19 @@ continuous outcomes; default is 1. Validated but unused for binary
 outcomes, whose variance is determined by their success probabilities.}
 }
 \value{
-A named list with exactly three components:
+A named list with four components:
 \describe{
 \item{data}{A data.frame containing raw covariates \code{x1_1}, ... and \code{x2_1},
 ..., followed by \code{Z}, \code{W}, and \code{Y}. It contains only observed variables.}
-\item{alldata}{The same data plus \code{G} (a factor with labels \verb{(a,b)}),
+\item{alldata}{The same data plus transformed continuous covariates
+\code{x1_t_1}, ... (when present), \code{G} (a factor with labels \verb{(a,b)}),
 \code{U}, \code{W0}, \code{W1}, \code{propensity}, \code{mean_y0}, and \code{mean_y1}. Factor levels
 include every allowed stratum, including those absent from this sample.}
 \item{weights}{The complete named list of coefficients actually used,
 in the format returned by \code{\link[=ps_simulate_weights]{ps_simulate_weights()}}.}
+\item{stratum_weights}{The resolved \code{w_levels} by \code{w_levels} matrix used
+to set allowed strata and their relative weights. Rows index \code{W0} and
+columns index \code{W1}; these entries are not marginal stratum probabilities.}
 }
 }
 \description{

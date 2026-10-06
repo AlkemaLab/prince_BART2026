@@ -4,10 +4,10 @@
 \alias{predict_trees}
 \title{Predict from Saved Trees}
 \usage{
-predict_trees(trees, newdata, scaling = NULL, n_cores = 1)
+predict_trees(trees, newdata, scaling = NULL, n_cores = 1, model = NULL)
 }
 \arguments{
-\item{trees}{A data.frame of tree structures from a prince_bart fit.}
+\item{trees}{A saved tree table from one fitted chain.}
 
 \item{newdata}{A matrix of covariates for prediction (can be unscaled if
 scaling is provided), or a list of matrices (one per posterior sample).}
@@ -17,6 +17,9 @@ standardizing newdata before prediction. Typically from \code{prince_bart_fit$sc
 If NULL, newdata is assumed to already be scaled.}
 
 \item{n_cores}{Number of cores for parallel prediction (default: 1).}
+
+\item{model}{Optional model label (the \code{m} column) to select from a
+chain's saved tree table. Required if the table contains multiple models.}
 }
 \value{
 A matrix of predicted probabilities with rows for observations
