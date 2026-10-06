@@ -53,23 +53,25 @@ expect_valid_binary_draws <- function(fit, n, chains = 1L) {
   expect_s3_class(fit, "prince_bart")
   expect_s3_class(fit, "prince_bart_binary")
   expect_identical(fit$uptake_type, "binary")
-  expect_equal(dim(fit$probs), c(4L, chains, 6L, n))
-  expect_equal(dim(fit$imp), c(4L, chains, 2L, n))
-  expect_identical(
-    dimnames(fit$probs)[[3]],
-    c("p_a", "p_n", "m_y0c", "m_y1c", "m_y0n", "m_y1a")
-  )
-  expect_identical(dimnames(fit$imp)[[3]], c("nt", "at"))
-  expect_true(all(is.finite(fit$probs)))
-  expect_true(all(fit$probs >= 0 & fit$probs <= 1))
-  expect_true(all(
-    fit$probs[, , "p_a", , drop = FALSE] +
-      fit$probs[, , "p_n", , drop = FALSE] <= 1 + 1e-12
-  ))
-  expect_true(all(fit$imp %in% c(0, 1)))
-  expect_true(all(
-    fit$imp[, , "nt", , drop = FALSE] +
-      fit$imp[, , "at", , drop = FALSE] <= 1
-  ))
+  expect_null(fit$imp)
+  expect_null(fit$probs)
   expect_null(fit$trees)
+  expect_length(fit$chains, chains)
+  for (chain in fit$chains) {
+    expect_named(chain,
+      c("nt", "at", "p_a", "p_n", "m_y0c", "m_y1c",
+        "m_y0n", "m_y1a", "trees"))
+    for (name in setdiff(names(chain), "trees")) {
+      expect_equal(dim(chain[[name]]), c(4L, n))
+    }
+    for (name in c("p_a", "p_n", "m_y0c", "m_y1c", "m_y0n", "m_y1a")) {
+      expect_true(all(is.finite(chain[[name]])))
+      expect_true(all(chain[[name]] >= 0 & chain[[name]] <= 1))
+    }
+    expect_true(all(chain$p_a + chain$p_n <= 1 + 1e-12))
+    expect_true(all(chain$nt %in% c(0, 1)))
+    expect_true(all(chain$at %in% c(0, 1)))
+    expect_true(all(chain$nt + chain$at <= 1))
+    expect_null(chain$trees)
+  }
 }

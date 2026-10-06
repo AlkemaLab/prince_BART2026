@@ -244,10 +244,12 @@ pstrata_fitter <- function(data, mcmc_iters = 200, pre_fit = NULL) {
 
 ```{r princebart-fitters}
 
-late_draws_from_probs <- function(probs) {
-  d <- probs[, , "m_y1c", , drop = FALSE] - probs[, , "m_y0c", , drop = FALSE]
-  p_c <- 1 - probs[, , "p_a", , drop = FALSE] - probs[, , "p_n", , drop = FALSE]
-  as.numeric(apply(d * p_c, 1:2, sum) / apply(p_c, 1:2, sum))
+late_draws_from_chains <- function(chains) {
+  unlist(lapply(chains, function(chain) {
+    d <- chain$m_y1c - chain$m_y0c
+    p_c <- 1 - chain$p_a - chain$p_n
+    rowSums(d * p_c) / rowSums(p_c)
+  }), use.names = FALSE)
 }
 
 
@@ -260,7 +262,7 @@ princeb_fitter <- function(data, mcmc_iters = 200) {
     n_chains = 1,
     keep_trees = FALSE
   )
-  draws <- late_draws_from_probs(fit$probs)
+  draws <- late_draws_from_chains(fit$chains)
   c(mean(draws), sd(draws), quantile(draws, c(0.025, 0.975)))
 }
 
