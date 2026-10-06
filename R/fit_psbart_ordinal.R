@@ -594,7 +594,8 @@ a_j <- function(j, y_max = Inf) {
   val
 }
 
-mdiff <- function(x) c(x[1], diff(x))
+# nothing is calling or using this function. removed.
+# mdiff <- function(x) c(x[1], diff(x))
 
 p_wpair <- function(w0, w1, mu_z1, mu_z0, sig_z1, sig_z0, rho = 0) {
   n <- max(length(w0), length(w1))

@@ -234,3 +234,66 @@ dbarts_binary <- function(
   result <- methods::new("dbartsSampler", control, model, data)
   result
 }
+
+#' @keywords internal
+resolve_and_validate_uptake <- function(W, uptake_type) {
+  W <- as.numeric(W)
+  if (any(is.na(W))) {
+    stop("W must not contain missing values")
+  }
+
+  unique_vals <- unique(W)
+  is_binary <- all(unique_vals %in% c(0, 1))
+
+  if (uptake_type == "auto") {
+    resolved_type <- if (is_binary) "binary" else "ordinal"
+  } else {
+    resolved_type <- uptake_type
+  }
+
+  if (resolved_type == "binary") {
+    if (!is_binary) {
+      stop("For uptake_type = 'binary', W must be binary (0/1)")
+    }
+    return(list(W = W, uptake_type = resolved_type))
+  }
+
+  # Ordinal/count uptake: non-negative integers
+  is_integer_like <- abs(W - round(W)) <= sqrt(.Machine$double.eps)
+  if (!all(is_integer_like) || any(W < 0)) {
+    stop("For uptake_type = 'ordinal', W must be non-negative integer values")
+  }
+
+  list(W = as.numeric(round(W)), uptake_type = resolved_type)
+}
+
+#' @keywords internal
+validate_and_prepare_X <- function(X) {
+  if (is.data.frame(X)) {
+    X <- as.matrix(X)
+  }
+  if (!is.matrix(X) || !is.numeric(X)) {
+    stop("X must be a numeric matrix or data.frame")
+  }
+  scale(X)
+}
+
+#' @keywords internal
+validate_binary <- function(x, name) {
+  x <- as.numeric(x)
+  unique_vals <- unique(x[!is.na(x)])
+  if (!all(unique_vals %in% c(0, 1))) {
+    stop(name, " must be binary (0/1)")
+  }
+  x
+}
+
+#' @keywords internal
+validate_propensity <- function(propensity, n) {
+  if (length(propensity) != n) {
+    stop("propensity must have length equal to number of observations")
+  }
+  if (any(propensity <= 0 | propensity >= 1, na.rm = TRUE)) {
+    stop("propensity scores must be strictly between 0 and 1")
+  }
+}

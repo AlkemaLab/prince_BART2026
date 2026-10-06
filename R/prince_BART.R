@@ -24,37 +24,6 @@ combine_chain_trees <- function(chain_results, keep_trees) {
   }, list_tree, seq_along(list_tree)))
 }
 
-#' @keywords internal
-resolve_and_validate_uptake <- function(W, uptake_type) {
-  W <- as.numeric(W)
-  if (any(is.na(W))) {
-    stop("W must not contain missing values")
-  }
-
-  unique_vals <- unique(W)
-  is_binary <- all(unique_vals %in% c(0, 1))
-
-  if (uptake_type == "auto") {
-    resolved_type <- if (is_binary) "binary" else "ordinal"
-  } else {
-    resolved_type <- uptake_type
-  }
-
-  if (resolved_type == "binary") {
-    if (!is_binary) {
-      stop("For uptake_type = 'binary', W must be binary (0/1)")
-    }
-    return(list(W = W, uptake_type = resolved_type))
-  }
-
-  # Ordinal/count uptake: non-negative integers
-  is_integer_like <- abs(W - round(W)) <= sqrt(.Machine$double.eps)
-  if (!all(is_integer_like) || any(W < 0)) {
-    stop("For uptake_type = 'ordinal', W must be non-negative integer values")
-  }
-
-  list(W = as.numeric(round(W)), uptake_type = resolved_type)
-}
 
 #' @keywords internal
 .run_psbart_binary_chains <- function(

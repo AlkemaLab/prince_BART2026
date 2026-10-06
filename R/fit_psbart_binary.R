@@ -172,42 +172,6 @@
 
 
 # -----------------------------------------------------------------------------
-# Validation helpers (used by prince_BART)
-# -----------------------------------------------------------------------------
-
-#' @keywords internal
-validate_and_prepare_X <- function(X) {
-  if (is.data.frame(X)) {
-    X <- as.matrix(X)
-  }
-  if (!is.matrix(X) || !is.numeric(X)) {
-    stop("X must be a numeric matrix or data.frame")
-  }
-  scale(X)
-}
-
-#' @keywords internal
-validate_binary <- function(x, name) {
-  x <- as.numeric(x)
-  unique_vals <- unique(x[!is.na(x)])
-  if (!all(unique_vals %in% c(0, 1))) {
-    stop(name, " must be binary (0/1)")
-  }
-  x
-}
-
-#' @keywords internal
-validate_propensity <- function(propensity, n) {
-  if (length(propensity) != n) {
-    stop("propensity must have length equal to number of observations")
-  }
-  if (any(propensity <= 0 | propensity >= 1, na.rm = TRUE)) {
-    stop("propensity scores must be strictly between 0 and 1")
-  }
-}
-
-
-# -----------------------------------------------------------------------------
 # Internal helper functions
 # -----------------------------------------------------------------------------
 

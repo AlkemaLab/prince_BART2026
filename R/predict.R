@@ -58,8 +58,6 @@ predict_trees <- function(trees, newdata, scaling = NULL, n_cores = 1) {
 
   stats::pnorm(simplify2array(preds))
 }
-
-
 #' Get Predictions for a Single Tree
 #'
 #' Recursive function to traverse a single BART tree and generate predictions.
@@ -104,4 +102,41 @@ get_predictions_for_tree <- function(tree, x) {
 
   get_predictions_recursive(tree, seq_len(nrow(x)))
   predictions
+}
+
+# Predict from one saved posterior sample's trees.
+predict_one_sample <- function(trees, x) {
+  trees <- as.data.frame(trees)
+  if (nrow(trees) == 0) {
+    stop("No trees available for this posterior sample/model component")
+  }
+  n_trees <- max(trees$tree)
+
+  preds <- sapply(seq_len(n_trees), function(i) {
+    one_tree <- trees[trees$tree == i, ]
+    if (nrow(one_tree) == 0) {
+      stop("Missing tree id ", i, " in posterior sample component")
+    }
+    get_predictions_for_tree(one_tree, x)
+  })
+
+  stats::pnorm(rowSums(preds))
+}
+
+predict_one_sample_raw <- function(trees, x) {
+  trees <- as.data.frame(trees)
+  if (nrow(trees) == 0) {
+    stop("No trees available for raw posterior sample/model component")
+  }
+  n_trees <- max(trees$tree)
+
+  preds <- sapply(seq_len(n_trees), function(i) {
+    one_tree <- trees[trees$tree == i, ]
+    if (nrow(one_tree) == 0) {
+      stop("Missing tree id ", i, " in raw posterior sample component")
+    }
+    get_predictions_for_tree(one_tree, x)
+  })
+
+  rowSums(preds)
 }
