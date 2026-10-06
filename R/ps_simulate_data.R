@@ -142,15 +142,19 @@ ps_simulate_weights <- function(nx1 = 1L, nx2 = 1L, w_levels = 2L,
 #' datasets are useful for checking the generator; support for fitting them
 #' depends on the fitting function's covariate requirements.
 #'
-#' @return A named list with exactly three components:
+#' @return A named list with four components:
 #' \describe{
 #'   \item{data}{A data.frame containing raw covariates `x1_1`, ... and `x2_1`,
 #'     ..., followed by `Z`, `W`, and `Y`. It contains only observed variables.}
-#'   \item{alldata}{The same data plus `G` (a factor with labels `(a,b)`),
+#'   \item{alldata}{The same data plus transformed continuous covariates
+#'     `x1_t_1`, ... (when present), `G` (a factor with labels `(a,b)`),
 #'     `U`, `W0`, `W1`, `propensity`, `mean_y0`, and `mean_y1`. Factor levels
 #'     include every allowed stratum, including those absent from this sample.}
 #'   \item{weights}{The complete named list of coefficients actually used,
 #'     in the format returned by [ps_simulate_weights()].}
+#'   \item{stratum_weights}{The resolved `w_levels` by `w_levels` matrix used
+#'     to set allowed strata and their relative weights. Rows index `W0` and
+#'     columns index `W1`; these entries are not marginal stratum probabilities.}
 #' }
 #' @examples
 #' sim <- ps_simulate_data(seed = 42)
@@ -267,6 +271,7 @@ ps_simulate_data <- function(n = 100L, nx1 = 1L, nx2 = 1L, w_levels = 2L,
     labels <- paste0("(", (allowed - 1L) %% w_levels, ",",
                      (allowed - 1L) %/% w_levels, ")")
     alldata <- data
+    for (j in seq_len(nx1)) alldata[[paste0("x1_t_", j)]] <- h[, j]
     alldata$G <- factor(g, levels = allowed, labels = labels)
     alldata$U <- u
     alldata$W0 <- w0
@@ -274,7 +279,8 @@ ps_simulate_data <- function(n = 100L, nx1 = 1L, nx2 = 1L, w_levels = 2L,
     alldata$propensity <- propensity
     alldata$mean_y0 <- mean_y0
     alldata$mean_y1 <- mean_y1
-    list(data = data, alldata = alldata, weights = weights)
+    list(data = data, alldata = alldata, weights = weights,
+         stratum_weights = support)
   })
 }
 

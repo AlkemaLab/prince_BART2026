@@ -3,21 +3,33 @@
 #' Generate predictions for new data using saved tree structures from
 #' a prince_bart fit.
 #'
-#' @param trees A data.frame of tree structures from a prince_bart fit.
+#' @param trees A saved tree table from one fitted chain.
 #' @param newdata A matrix of covariates for prediction (can be unscaled if
 #'   scaling is provided), or a list of matrices (one per posterior sample).
 #' @param scaling Optional list with `center` and `scale` named vectors for
 #'   standardizing newdata before prediction. Typically from `prince_bart_fit$scaling`.
 #'   If NULL, newdata is assumed to already be scaled.
 #' @param n_cores Number of cores for parallel prediction (default: 1).
+#' @param model Optional model label (the \code{m} column) to select from a
+#'   chain's saved tree table. Required if the table contains multiple models.
 #'
 #' @return A matrix of predicted probabilities with rows for observations
 #'   and columns for posterior samples.
 #'
 #' @export
-predict_trees <- function(trees, newdata, scaling = NULL, n_cores = 1) {
+predict_trees <- function(trees, newdata, scaling = NULL, n_cores = 1,
+                          model = NULL) {
   trees <- as.data.frame(trees)
-  samples <- unique(trees$sample)
+  if (!is.null(model)) trees <- trees[trees$m == model, , drop = FALSE]
+  if (nrow(trees) == 0L) stop("No saved trees for the selected model")
+  if ("m" %in% names(trees) && length(unique(trees$m)) > 1L) {
+    stop("Select one model with the model argument")
+  }
+  if ("chain" %in% names(trees) && length(unique(trees$chain)) > 1L) {
+    stop("Pass a tree table from one chain at a time")
+  }
+  sample_col <- if ("iteration" %in% names(trees)) "iteration" else "sample"
+  samples <- sort(unique(trees[[sample_col]]))
 
   # Allow a single matrix or a list of matrices, one per sample
   x_list <- if (is.list(newdata) && !is.data.frame(newdata)) {
@@ -47,8 +59,8 @@ predict_trees <- function(trees, newdata, scaling = NULL, n_cores = 1) {
     SIMPLIFY = FALSE, USE.NAMES = FALSE,
     FUN = function(sidx, xmat) {
       xmat <- as.matrix(xmat)
-      n_trees <- max(trees$tree)
-      these <- trees[trees$sample == sidx, ]
+      these <- trees[trees[[sample_col]] == sidx, , drop = FALSE]
+      n_trees <- max(these$tree)
       pre_mat <- sapply(seq_len(n_trees), function(i) {
         get_predictions_for_tree(these[these$tree == i, ], xmat)
       })

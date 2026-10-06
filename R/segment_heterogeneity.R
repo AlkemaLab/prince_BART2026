@@ -93,8 +93,8 @@ segment_heterogeneity <- function(
   if (!inherits(princebart, "prince_bart")) {
     stop("princebart must be a fitted prince_bart object")
   }
-  if (is.null(princebart$probs) || length(dim(princebart$probs)) != 4) {
-    stop("princebart$probs must be a 4D array")
+  if (is.null(princebart$chains) || length(princebart$chains) == 0L) {
+    stop("princebart must contain posterior chains")
   }
 
   if (is.null(data)) {
@@ -111,9 +111,9 @@ segment_heterogeneity <- function(
   names(data) <- safe_names
   name_map <- stats::setNames(safe_names, orig_names)
 
-  n_units <- dim(princebart$probs)[4]
+  n_units <- ncol(princebart$chains[[1]][[1]])
   if (nrow(data) != n_units) {
-    stop("data and princebart$probs must have the same number of units")
+    stop("data and princebart chains must have the same number of units")
   }
 
   if (is.null(vars)) {
@@ -138,8 +138,9 @@ segment_heterogeneity <- function(
   cate_draws <- seg_q$cate_draws
   group_prob_draws <- seg_q$group_prob_draws
 
-  data$cate <- apply(cate_draws, 3, mean, na.rm = TRUE)
-  data$w <- apply(group_prob_draws, 3, mean, na.rm = TRUE)
+  data$cate <- Reduce(`+`, lapply(cate_draws, colMeans)) / length(cate_draws)
+  data$w <- Reduce(`+`, lapply(group_prob_draws, colMeans)) /
+    length(group_prob_draws)
 
   rpart_data <- data[, unique(c("cate", vars, "w")), drop = FALSE]
   prep <- preprocess_segmentation_vars(rpart_data, vars)
@@ -163,18 +164,19 @@ segment_heterogeneity <- function(
   segment_draws <- function(include) {
     if (!any(include)) {
       return(
-        matrix(NA_real_, nrow = dim(cate_draws)[1], ncol = dim(cate_draws)[2])
+        matrix(NA_real_, nrow = nrow(cate_draws[[1]]),
+          ncol = length(cate_draws))
       )
     }
-    numer <- apply(
-      cate_draws[, , include, drop = FALSE] *
-        group_prob_draws[, , include, drop = FALSE]
-      , 1:2, sum
-    )
-    denom <- apply(group_prob_draws[, , include, drop = FALSE], 1:2, sum)
-    est <- numer / denom
-    est[denom == 0] <- NA_real_
-    est
+    estimates <- lapply(seq_along(cate_draws), function(i) {
+      weight <- group_prob_draws[[i]][, include, drop = FALSE]
+      numer <- rowSums(cate_draws[[i]][, include, drop = FALSE] * weight)
+      denom <- rowSums(weight)
+      result <- numer / denom
+      result[denom == 0] <- NA_real_
+      result
+    })
+    do.call(cbind, estimates)
   }
 
   summarize_draws <- function(draws) {
@@ -379,21 +381,16 @@ weighted_segment_sizes <- function(data, tree) {
 #' @keywords internal
 extract_segment_quantities <- function(princebart) {
   if (inherits(princebart, "prince_bart_binary")) {
-    prob <- princebart$probs
-    p_n <- prob[, , "p_n", ]
-    p_a <- prob[, , "p_a", ]
-    group_prob_draws <- 1 - p_n - p_a
-    cate_draws <- prob[, , "m_y1c", ] - prob[, , "m_y0c", ]
+    group_prob_draws <- lapply(princebart$chains,
+      function(chain) 1 - chain$p_n - chain$p_a)
+    cate_draws <- lapply(princebart$chains,
+      function(chain) chain$m_y1c - chain$m_y0c)
     group_label <- "complier"
   } else if (inherits(princebart, "prince_bart_ordinal")) {
-    if (is.null(princebart$imp) || length(dim(princebart$imp)) != 4) {
-      stop("princebart$imp must be a 4D array for ordinal fits")
-    }
-    imp <- princebart$imp
-    probs <- princebart$probs
-    affected <- (imp[, , "w0", ] - imp[, , "w1", ]) == 1
-    cate_draws <- probs[, , "m_y1", ] - probs[, , "m_y0", ]
-    group_prob_draws <- affected * 1
+    group_prob_draws <- lapply(princebart$chains,
+      function(chain) 1 * ((chain$w0 - chain$w1) == 1))
+    cate_draws <- lapply(princebart$chains,
+      function(chain) chain$m_y1 - chain$m_y0)
     group_label <- "affected"
   } else {
     stop(
@@ -401,8 +398,10 @@ extract_segment_quantities <- function(princebart) {
     )
   }
 
-  if (!identical(dim(cate_draws), dim(group_prob_draws))) {
-    stop("cate_draws and group_prob_draws must have identical dimensions")
+  if (!all(vapply(seq_along(cate_draws), function(i)
+      identical(dim(cate_draws[[i]]), dim(group_prob_draws[[i]])),
+      logical(1)))) {
+    stop("effect and group matrices must have identical dimensions")
   }
 
   list(

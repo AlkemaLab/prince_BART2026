@@ -101,7 +101,8 @@ general_BART <- function(
   if (!inherits(princebart_fit, "prince_bart")) {
     stop("princebart_fit must be a 'prince_bart' object")
   }
-  if (is.null(princebart_fit$trees)) {
+  trees_df <- collect_fit_trees(princebart_fit)
+  if (is.null(trees_df)) {
     stop("princebart_fit must have saved trees (use keep_trees = TRUE)")
   }
 
@@ -109,7 +110,7 @@ general_BART <- function(
   n_new <- nrow(newdata)
 
   # Get chain/sample structure from princebart fit
-  trees_df <- as.data.frame(princebart_fit$trees)
+  trees_df <- as.data.frame(trees_df)
   n_chains <- length(unique(trees_df$chain))
   n_samples <- length(unique(trees_df$iteration))
 
@@ -144,11 +145,10 @@ general_BART <- function(
   }
 
   source_group_prob <- NULL
-  if (identical(fit_uptake_type, "ordinal") &&
-      !is.null(princebart_fit$imp) && length(dim(princebart_fit$imp)) == 4) {
-    w0_imp <- princebart_fit$imp[, , "w0", , drop = FALSE]
-    w1_imp <- princebart_fit$imp[, , "w1", , drop = FALSE]
-    source_group_prob <- apply((w0_imp - w1_imp) == 1, 4, mean, na.rm = TRUE)
+  if (identical(fit_uptake_type, "ordinal")) {
+    source_group_prob <- Reduce(`+`, lapply(princebart_fit$chains,
+      function(chain) colMeans((chain$w0 - chain$w1) == 1,
+        na.rm = TRUE))) / length(princebart_fit$chains)
   }
 
   # Get scaling parameters from canonical fit metadata.
@@ -231,9 +231,9 @@ general_BART <- function(
   if (verbose) message("Step 1: Imputing missing covariates...")
 
   # Step 1: Multiple imputation of missing X
-  mi_array <- NULL
+  mi_draws <- NULL
   if (length(mi_vars) > 0) {
-    mi_array <- impute_missing_x(
+    mi_draws <- impute_missing_x(
       source_X = source_X[, x_cols, drop = FALSE],
       newdata = newdata,
       mi_vars = mi_vars,
@@ -262,9 +262,9 @@ general_BART <- function(
 
   # Step 3: Predict Y(0) and Y(1) in external data
   preds <- predict_external_outcomes(
-    trees = princebart_fit$trees,
+    trees = trees_df,
     newdata = newdata,
-    mi_array = mi_array,
+    mi_draws = mi_draws,
     mi_vars = mi_vars,
     propensity_bart = propensity_bart,
     e_precomputed = e_precomputed,
@@ -321,7 +321,7 @@ general_BART <- function(
     source_Z = source_Z,
     fit_uptake_type = fit_uptake_type,
     source_group_prob = source_group_prob,
-    trees = princebart_fit$trees,
+    trees = trees_df,
     scaled_center = scaled_center,
     scaled_scale = scaled_scale,
     n_obs = sum(subpop),
@@ -419,21 +419,14 @@ impute_missing_x <- function(
     aperm(result, c(3, 2, 1))
   })
 
-  # Each element is units x samples x chains (already permuted above)
-  # Stack into 4D array: units x vars x samples x chains
-  mi_array <- array(NA_real_, dim = c(n_units, length(mi_vars), n_samples, n_chains))
-  for (j in seq_along(mi_vars)) {
-    mi_array[, j, , ] <- mi_list[[j]]
-  }
-
-  dimnames(mi_array) <- list(
-    unit = NULL,
-    var = mi_vars,
-    iteration = NULL,
-    chain = NULL
-  )
-
-  mi_array
+  # Keep the same iteration-by-unit matrix contract as the fitted chains.
+  lapply(seq_len(n_chains), function(ch) {
+    draws <- lapply(mi_list, function(x) {
+      t(matrix(x[, , ch], nrow = n_units, ncol = n_samples))
+    })
+    names(draws) <- mi_vars
+    draws
+  })
 }
 
 
@@ -443,7 +436,7 @@ impute_missing_x <- function(
 predict_external_outcomes <- function(
   trees,
   newdata,
-  mi_array,
+  mi_draws,
   mi_vars,
   propensity_bart,
   e_precomputed = NULL,
@@ -485,10 +478,10 @@ predict_external_outcomes <- function(
     x <- newdata
 
     # Inject MI imputations if available
-    # mi_array is [units, vars, iterations, chains]
-    if (!is.null(mi_array) && length(mi_vars) > 0) {
+    # mi_draws[[chain]][[variable]] is iteration by unit.
+    if (!is.null(mi_draws) && length(mi_vars) > 0) {
       for (j in seq_along(mi_vars)) {
-        x[[mi_vars[j]]] <- mi_array[, j, iter_idx, chain_idx]
+        x[[mi_vars[j]]] <- mi_draws[[chain_idx]][[mi_vars[j]]][iter_idx, ]
       }
     }
 
@@ -720,7 +713,7 @@ compute_generalizability_overlap <- function(
   # Predict P(group|X):
   # - binary fit -> complier probability via "co" trees
   # - ordinal fit -> affected probability via imp draws
-  trees <- as.data.frame(princebart_fit$trees)
+  trees <- as.data.frame(collect_fit_trees(princebart_fit))
   trees_co <- trees[trees$m == "co", ]
 
   # Fit instrument propensity e = P(Z|X) using unscaled covariates
@@ -787,14 +780,9 @@ compute_generalizability_overlap <- function(
     if (verbose) {
       message("  Using experimental ordinal overlap diagnostic (affected-unit probability)")
     }
-    if (is.null(princebart_fit$imp) || length(dim(princebart_fit$imp)) != 4) {
-      stop("Cannot compute ordinal overlap: fit has no valid imp array")
-    }
-
-    imp <- princebart_fit$imp
-    w0_imp <- imp[, , "w0", , drop = FALSE]
-    w1_imp <- imp[, , "w1", , drop = FALSE]
-    pi_c_source <- apply((w0_imp - w1_imp) == 1, 4, mean, na.rm = TRUE)
+    pi_c_source <- Reduce(`+`, lapply(princebart_fit$chains,
+      function(chain) colMeans((chain$w0 - chain$w1) == 1,
+        na.rm = TRUE))) / length(princebart_fit$chains)
 
     pi_c_bart <- dbarts::bart2(
       source_X_unscaled[, x_cols, drop = FALSE],

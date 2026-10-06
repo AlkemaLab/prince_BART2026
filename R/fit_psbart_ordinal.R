@@ -24,12 +24,9 @@
 #' @param verbose Logical; print progress updates.
 #' @param ... Unused.
 #'
-#' @return A list with elements:
-#'   \item{imputed}{Array \code{(n_samples, n, 2)} for sampled \code{w0}, \code{w1}.}
-#'   \item{probs}{Array \code{(n_samples, n, 2)} for \code{m_y0}, \code{m_y1}.}
-#'   \item{check}{Array \code{(n_samples, n, 2)} with posterior predictive
-#'     draws for \code{w0}, \code{w1} diagnostics.}
-#'   \item{trees}{Tree structures when \code{save_trees = TRUE}.}
+#' @return A list of iteration-by-unit matrices \code{w0}, \code{w1},
+#'   \code{m_y0}, \code{m_y1}, \code{check_w0}, and \code{check_w1}, plus a
+#'   \code{trees} table when requested.
 #'
 #' @keywords internal
 .fit_psbart_ordinal <- function(
@@ -46,7 +43,7 @@
   monotonicity = TRUE,
   rho = 0,
   save_trees = TRUE,
-  save_trees_interval = 10L,
+  save_trees_interval = 1L,
   verbose = FALSE,
   ...
 ) {
@@ -249,19 +246,15 @@
     trees <- NULL
   }
 
-  imputed <- c(storage$samples_w0, storage$samples_w1) |>
-    array(dim = c(n_samples, n, 2))
-  probs <- c(storage$mean_y0, storage$mean_y1) |>
-    array(dim = c(n_samples, n, 2))
-  check <- c(storage$check_w0, storage$check_w1) |>
-    array(dim = c(n_samples, n, 2))
-
-  dnames <- list(iteration = NULL, unit = NULL)
-  dimnames(imputed) <- c(dnames, list(variable = c("w0", "w1")))
-  dimnames(probs)   <- c(dnames, list(variable = c("m_y0", "m_y1")))
-  dimnames(check)   <- c(dnames, list(variable = c("check_w0", "check_w1")))
-
-  list(imputed = imputed, trees = trees, probs = probs, check = check)
+  list(
+    w0 = storage$samples_w0,
+    w1 = storage$samples_w1,
+    m_y0 = storage$mean_y0,
+    m_y1 = storage$mean_y1,
+    check_w0 = storage$check_w0,
+    check_w1 = storage$check_w1,
+    trees = trees
+  )
 }
 
 

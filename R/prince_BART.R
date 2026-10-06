@@ -1,27 +1,12 @@
 #' @keywords internal
-combine_chain_array <- function(lst, var_names) {
-  out <- abind::abind(lst, along = 4)
-  out <- aperm(out, c(1, 4, 3, 2))
-  dimnames(out) <- list(
-    iteration = NULL,
-    chain = NULL,
-    variable = var_names,
-    unit = NULL
-  )
-  out
-}
-
-#' @keywords internal
-combine_chain_trees <- function(chain_results, keep_trees) {
-  if (!keep_trees) {
-    return(NULL)
-  }
-
-  list_tree <- lapply(chain_results, function(x) x$trees)
-  do.call(rbind, Map(function(df, id) {
-    df$chain <- id
-    df
-  }, list_tree, seq_along(list_tree)))
+collect_fit_trees <- function(fit) {
+  tables <- lapply(seq_along(fit$chains), function(i) {
+    trees <- fit$chains[[i]]$trees
+    if (is.null(trees)) return(NULL)
+    trees$chain <- i
+    trees
+  })
+  do.call(rbind, tables)
 }
 
 
@@ -61,17 +46,7 @@ combine_chain_trees <- function(chain_results, keep_trees) {
     future.seed = TRUE
   )
 
-  list(
-    trees = combine_chain_trees(res0, keep_trees)
-    , imp = combine_chain_array(
-      lapply(res0, function(x) x$imputed), c("nt", "at")
-    )
-    , probs = combine_chain_array(
-      lapply(res0, function(x) x$probs)
-      , c("p_a", "p_n", "m_y0c", "m_y1c", "m_y0n", "m_y1a")
-    )
-    , check = NULL
-  )
+  res0
 }
 
 #' @keywords internal
@@ -127,12 +102,7 @@ combine_chain_trees <- function(chain_results, keep_trees) {
     future.seed = TRUE
   )
 
-  list(
-    trees = combine_chain_trees(res0, keep_trees),
-    imp = combine_chain_array(lapply(res0, function(x) x$imputed), c("w0", "w1")),
-    probs = combine_chain_array(lapply(res0, function(x) x$probs), c("m_y0", "m_y1")),
-    check = combine_chain_array(lapply(res0, function(x) x$check), c("check_w0", "check_w1"))
-  )
+  res0
 }
 
 #' Principal Stratification using BART
@@ -225,14 +195,11 @@ combine_chain_trees <- function(chain_results, keep_trees) {
 #' future::plan(future::multisession)
 #' }
 #'
-#' @return A list of class \code{"prince_bart"} containing posterior draws from
-#'   all chains, including:
+#' @return A list of class \code{"prince_bart"} containing:
 #'   \itemize{
-#'     \item \code{imp}: Imputed latent quantities
-#'       (iteration x chain x variable x unit).
-#'     \item \code{probs}: Posterior draws of probabilities/outcome means.
-#'     \item \code{check}: Ordinal diagnostic array (ordinal mode only).
-#'     \item \code{trees}: Fitted BART trees (if \code{keep_trees = TRUE}).
+#'     \item \code{chains}: One list per MCMC chain. Each named draw is an
+#'       iteration-by-unit matrix. Each chain also contains a \code{trees}
+#'       table with iteration and model labels if \code{keep_trees = TRUE}.
 #'     \item \code{data}: Stored input data, including \code{X_model}
 #'       (processed covariates used by the fitted model), \code{X_raw}
 #'       (raw covariates when available), \code{X} (compatibility alias to
@@ -438,15 +405,7 @@ prince_BART <- function(
   }
 
   # Unified output assembly
-  res <- list(
-    trees = chain_results$trees,
-    imp = chain_results$imp,
-    probs = chain_results$probs
-  )
-
-  if (!is.null(chain_results$check)) {
-    res$check <- chain_results$check
-  }
+  res <- list(chains = chain_results)
 
   # Store data reference with UNSCALED X (for general_BART compatibility)
   # X is currently scaled with e appended; unscale covariates before storing

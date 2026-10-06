@@ -55,19 +55,14 @@ print.prince_bart <- function(x, ...) {
   cat("Principal Stratification BART Fit\n")
   cat("---------------------------------\n")
 
-  if (!is.null(dim(x$probs))) {
-    dims <- dim(x$probs)
-    if (length(dims) == 4) {
-      cat("Chains:      ", dims[2], "\n")
-      cat("Iterations:  ", dims[1], "\n")
-      cat("Units:       ", dims[4], "\n")
-    } else if (length(dims) == 3) {
-      cat("Iterations:  ", dims[1], "\n")
-      cat("Units:       ", dims[2], "\n")
-    }
+  if (length(x$chains) > 0) {
+    first_draw <- x$chains[[1]][[1]]
+    cat("Chains:      ", length(x$chains), "\n")
+    cat("Iterations:  ", nrow(first_draw), "\n")
+    cat("Units:       ", ncol(first_draw), "\n")
   }
 
-  if (!is.null(x$trees)) {
+  if (any(vapply(x$chains, function(chain) !is.null(chain$trees), logical(1)))) {
     cat("Trees:        saved\n")
   }
 
