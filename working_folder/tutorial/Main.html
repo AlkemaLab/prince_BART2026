@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="princeBART authors">
+<meta name="dcterms.date" content="2026-10-13">
+
+<title>Introduction to princeBART</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Main_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Main_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Main_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Main_files/libs/quarto-html/popper.min.js"></script>
+<script src="Main_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Main_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Main_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Main_files/libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Main_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Main_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Main_files/libs/bootstrap/bootstrap-215b371544c282197b31c8aa00ce3677.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Introduction to princeBART</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>princeBART authors </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">October 13, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="overview" class="level2">
+<h2 class="anchored" data-anchor-id="overview">Overview</h2>
+<p>princeBART implements <strong>Principal Stratification with Bayesian Additive Regression Trees (BART)</strong> for causal inference. It estimates treatment effects for compliers—units whose treatment status is affected by an instrument.</p>
+<p>If you are unfamiliar with principle stratification or BART, you may refer to <a href="other-background.qmd">Link to background</a> for reference.</p>
+<p>While the canonical application is noncompliance in randomized experiments, the framework applies broadly to any setting with:</p>
+<ul>
+<li>An <strong>instrument Z</strong> that affects treatment uptake but has no direct effect on outcomes</li>
+<li>An <strong>endogenous treatment W</strong> whose causal effect on Y is of interest</li>
+<li><strong>Covariates X</strong> that may confound the Z-W or W-Y relationships</li>
+</ul>
+</section>
+<section id="the-setup" class="level2">
+<h2 class="anchored" data-anchor-id="the-setup">The Setup</h2>
+<p>We observe:</p>
+<ul>
+<li><strong>Z</strong>: Binary instrument (e.g., randomized assignment, geographic variation, policy change)</li>
+<li><strong>W</strong>: Binary or endogenous treatment/exposure of interest (Later generalized to count-valued Z)</li>
+<li><strong>Y</strong>: Binary outcome</li>
+<li><strong>X</strong>: Covariates</li>
+</ul>
+<p>And the population consists of four principal strata <span class="math inline">\(G\)</span> that we don’t fully observe:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Stratum</th>
+<th>W if Z=0</th>
+<th>W if Z=1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Compliers</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>Never-takers</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>Always-takers</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>Defiers</td>
+<td>1</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>We also denote unobserved confounders as <span class="math inline">\(U\)</span>.</p>
+<section id="key-assumptions" class="level3">
+<h3 class="anchored" data-anchor-id="key-assumptions">Key Assumptions</h3>
+<ol type="1">
+<li><strong>Conditional randomization</strong>: <span class="math inline">\(Z \perp\!\!\!\perp (Y(z,w), W(z)) | X\)</span> — the instrument is as-good-as-random given covariates</li>
+<li><strong>Exclusion restriction</strong>: Z affects Y only through W</li>
+<li><strong>Monotonicity</strong>: No defiers (units for whom Z decreases W)</li>
+</ol>
+<p>The key estimand is the <strong>Complier Average Causal Effect (CACE)</strong>, also known as the Local Average Treatment Effect (LATE)—the causal effect of W on Y for units whose treatment is affected by the instrument. Writing <span class="math inline">\(Y(w)\)</span> for the potential outcome under received treatment <span class="math inline">\(w\)</span>, the conditional effect is</p>
+<p><span class="math display">\[
+\mathrm{CATE}_C
+= E\!\left[Y(1)-Y(0)\mid G = Compliers\right].
+\]</span></p>
+<p>For a binary outcome, this is the difference in outcome probabilities under treatment and no treatment among compliers.</p>
+</section>
+</section>
+<section id="simulated-example-data" class="level2">
+<h2 class="anchored" data-anchor-id="simulated-example-data">Simulated Example Data</h2>
+<p>Let’s create a simulated dataset using the build-in simulation function:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">800</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>simdata <span class="ot">=</span> <span class="fu">ps_simulate_data</span>(n)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The following describes how the data was generated: Here the defaults give one continuous covariate <span class="math inline">\(X_1\sim N(0,1)\)</span>, one binary covariate <span class="math inline">\(X_2\sim\mathrm{Bernoulli}(0.5)\)</span>, and an unobserved variable <span class="math inline">\(U\sim N(0,1)\)</span>, drawn independently. The generator follows four steps:</p>
+<p><span class="math display">\[
+\begin{aligned}
+P(G=g\mid X,U)
+&amp;=\frac{\exp(\widetilde X^\top\alpha_g+\gamma_g U)}
+{\sum_{h\in\mathcal G}\exp(\widetilde X^\top\alpha_h+\gamma_h U)},
+\quad \mathcal G=\{(0,0),(0,1),(1,1)\},\\
+Z\mid X &amp;\sim\mathrm{Bernoulli}\!\left(\operatorname{expit}(\widetilde X^\top\beta)\right),\\
+W &amp;=(1-Z)W(0)+ZW(1),\\
+Y\mid X,U,G,W &amp;\sim\mathrm{Bernoulli}\!\left(
+\operatorname{expit}(\widetilde X^\top\theta_G+\delta_G U+\tau_G W)\right).
+\end{aligned}
+\]</span></p>
+<p>The pair <span class="math inline">\(G=(W(0),W(1))\)</span> identifies the principal stratum. By default, each coefficient is drawn once from <span class="math inline">\(N(0,1)\)</span> for this dataset. The unobserved <span class="math inline">\(U\)</span> affects strata and outcomes, while assignment <span class="math inline">\(Z\)</span> depends only on the observed covariates.</p>
+<p>The ps_simulate_data(n) is flexible to generate more complex data. You can find additional information at <a href="Simulation.qmd">Link to Simulation</a></p>
+<p>The resulting <code>simdata</code> has four components: The <code>data</code> component is the observed data:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(simdata<span class="sc">$</span>data, <span class="dv">5</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;         x1_1 x2_1 Z W Y</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1  0.7631757    0 0 0 0</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 -0.1645236    0 1 1 1</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 -0.2533617    1 1 1 1</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  0.6969634    1 1 1 1</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5  0.5566632    0 0 1 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The other three components retain information that is known in a simulation:</p>
+<ul>
+<li><code>alldata</code> contains the observed data, the true stratum <code>G</code>, unobserved <code>U</code>, potential uptake <code>W0</code> and <code>W1</code>, the assignment probability <code>propensity</code>, and conditional outcome means <code>mean_y0</code> and <code>mean_y1</code>. These means correspond to assignment <span class="math inline">\(Z=0\)</span> and <span class="math inline">\(Z=1\)</span>; for binary compliers they also correspond to received treatment <span class="math inline">\(W=0\)</span> and <span class="math inline">\(W=1\)</span>.</li>
+<li><code>weights</code> contains the coefficients actually used to generate the data. Reusing it allows new datasets to be generated under the same model.</li>
+<li><code>stratum_weights</code> is a matrix whose rows index <code>W0</code> and columns index <code>W1</code>. Zero entries exclude strata; positive entries set relative weights before normalization, rather than marginal stratum probabilities.</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(simdata<span class="sc">$</span>alldata[<span class="fu">c</span>(<span class="st">"G"</span>, <span class="st">"U"</span>, <span class="st">"W0"</span>, <span class="st">"W1"</span>, <span class="st">"propensity"</span>,</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"mean_y0"</span>, <span class="st">"mean_y1"</span>)], <span class="dv">5</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       G          U W0 W1 propensity   mean_y0   mean_y1</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 (0,0) -1.6521103  0  0  0.6691012 0.3198400 0.3198400</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 (1,1)  0.0690946  1  1  0.4572363 0.7512098 0.7512098</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 (0,1)  2.3905767  0  1  0.6378164 0.7475662 0.7362096</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4 (1,1) -1.4617717  1  1  0.8119682 0.9883143 0.9883143</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 (1,1) -0.9848063  1  1  0.6246209 0.9201217 0.9201217</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(simdata<span class="sc">$</span>weights)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [1] "g_intercept" "g_x1"        "g_x2"        "g_u"         "z_intercept"</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [6] "z_x1"        "z_x2"        "y_intercept" "y_x1"        "y_x2"       </span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [11] "y_u"         "y_w"</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>simdata<span class="sc">$</span>stratum_weights</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,]    1    1</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2,]    0    1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="basic-usage" class="level2">
+<h2 class="anchored" data-anchor-id="basic-usage">Basic Usage</h2>
+<p>princeBART uses a 2SLS-style formula: <code>Y ~ covariates | Z | W</code>. The following code will fit the model and print the summary:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set up parallel backend</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plan</span>(multisession, <span class="at">workers =</span> <span class="dv">4</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the model</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">prince_BART</span>(</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> x1_1 <span class="sc">+</span> x2_1 <span class="sc">|</span> Z <span class="sc">|</span> W,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simdata<span class="sc">$</span>data,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_chains =</span> <span class="dv">4</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_samples =</span> <span class="dv">1500</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Principal Stratification BART Summary (Binary Uptake)</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; =====================================================</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Principal Strata Distribution:</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        variable      mean    median         sd        mad        q5       q95</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1     compliers 0.1664077 0.1660886 0.02818767 0.02837224 0.1210085 0.2131449</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  never-takers 0.1450925 0.1449459 0.01575088 0.01583875 0.1194318 0.1711149</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 always-takers 0.6884998 0.6888042 0.02514888 0.02532597 0.6463705 0.7292424</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       rhat  ess_bulk  ess_tail</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 1.012171  339.3822  640.8274</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 1.008330 1090.5747 2780.4247</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 1.006121  464.9133 1073.0934</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Mixed ATE for Compliers:</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                  variable       mean     median         sd        mad</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1        Y(0) | compliers  0.7670455  0.7708029 0.09532668 0.09825531</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2        Y(1) | compliers  0.5972219  0.6101731 0.13388239 0.12534750</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     Y(0) | never-takers  0.6432346  0.6442694 0.05686322 0.05810029</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4    Y(1) | always-takers  0.7919161  0.7928559 0.02165061 0.02159945</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 Mixed ATE for compliers -0.1698236 -0.1604736 0.16312044 0.16330291</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           q5        q95     rhat  ess_bulk  ess_tail</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1  0.6049514 0.91728303 1.003643  719.6918  941.1982</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  0.3528433 0.79070085 1.010824  300.3932  517.1525</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  0.5489610 0.73496965 1.001001 1105.2266 2714.1037</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  0.7550472 0.82602992 1.005900  667.1874 1445.0949</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 -0.4533644 0.08550196 1.010171  383.5865  690.7001</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>By default, the mixed ATE for Compliers are printed. In this simulation, the result is <code>0.1876226</code>. There are other effects that can be calculated from the fitted object, such as mixed ATE for treated Compliers. You can find additional information at <a href="Effects.qmd">Link to effects</a></p>
+<p>We identify the simulated compliers using their known potential uptake and average their conditional mean differences:</p>
+<p><span class="math display">\[
+\tau_{C,\mathrm{truth}}
+=\frac{1}{n_C}\sum_{i:W_i(0)=0,\ W_i(1)=1}
+\left(\mathrm{mean\_y1}_i-\mathrm{mean\_y0}_i\right).
+\]</span></p>
+<p>This is the expected sample ATE conditional on the simulated covariates, <span class="math inline">\(U\)</span>, and strata. The generator does not return both realized binary potential outcomes, so their realized sample ATE is unavailable.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>truth <span class="ot">&lt;-</span> simdata<span class="sc">$</span>alldata</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>is_complier <span class="ot">&lt;-</span> truth<span class="sc">$</span>W0 <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> truth<span class="sc">$</span>W1 <span class="sc">==</span> <span class="dv">1</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">any</span>(is_complier))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>true_sate_c <span class="ot">&lt;-</span> <span class="fu">mean</span>((truth<span class="sc">$</span>mean_y1 <span class="sc">-</span> truth<span class="sc">$</span>mean_y0)[is_complier])</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>true_sate_c</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] -0.01159444</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>We can also analyze the data using Two Stage Least Squares (2SLS), which is the convention approach for principle stratification.</p>
+<p>2SLS first predicts received treatment <code>W</code> from instrument <code>Z</code> and the covariates, then regresses <code>Y</code> on that prediction and the same covariates. Run the fitting block above and the comparison block below interactively, or enable evaluation of both blocks when rendering. The comparison uses the sample estimand from <code>extract()</code>; the earlier default <code>summary(fit)</code> reports the mixed estimand.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>first_stage <span class="ot">&lt;-</span> <span class="fu">lm</span>(W <span class="sc">~</span> Z <span class="sc">+</span> x1_1 <span class="sc">+</span> x2_1, <span class="at">data =</span> simdata<span class="sc">$</span>data)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>two_sls_data <span class="ot">&lt;-</span> simdata<span class="sc">$</span>data</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>two_sls_data<span class="sc">$</span>W_hat <span class="ot">&lt;-</span> <span class="fu">fitted</span>(first_stage)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>fit_2sls <span class="ot">&lt;-</span> <span class="fu">lm</span>(Y <span class="sc">~</span> W_hat <span class="sc">+</span> x1_1 <span class="sc">+</span> x2_1, <span class="at">data =</span> two_sls_data)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>tsls_estimates <span class="ot">&lt;-</span> <span class="fu">unname</span>(stats<span class="sc">::</span><span class="fu">coef</span>(fit_2sls)[<span class="st">"W_hat"</span>])</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>bart_effects <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">extract</span>(fit, <span class="st">"sate_c"</span>)[[<span class="dv">2</span>]])</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>bart_mean <span class="ot">&lt;-</span> bart_effects<span class="sc">$</span>mean[</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  bart_effects<span class="sc">$</span>variable <span class="sc">==</span> <span class="st">"Sample ATE for compliers"</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">Method =</span> <span class="fu">c</span>(<span class="st">"Simulation truth"</span>,</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>             <span class="st">"princeBART posterior mean"</span>,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>             <span class="st">"2SLS estimates"</span>),</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">Estimate =</span> <span class="fu">c</span>(true_sate_c, bart_mean, tsls_estimates)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(comparison, <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Method</th>
+<th style="text-align: right;">Estimate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Simulation truth</td>
+<td style="text-align: right;">-0.012</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">princeBART posterior mean</td>
+<td style="text-align: right;">-0.174</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2SLS estimates</td>
+<td style="text-align: right;">-0.012</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="effect-heterogeneity-by-segments-mostly-unchanged-but-we-may-need-some-non-linearity" class="level2">
+<h2 class="anchored" data-anchor-id="effect-heterogeneity-by-segments-mostly-unchanged-but-we-may-need-some-non-linearity">Effect Heterogeneity by Segments (mostly unchanged, but we may need some non-linearity?)</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>simdata <span class="ot">=</span> <span class="fu">ps_simulate_data</span>(n, <span class="at">x1_transform =</span> <span class="st">"relu"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">prince_BART</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> x1_1 <span class="sc">+</span> x2_1 <span class="sc">|</span> Z <span class="sc">|</span> W,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simdata<span class="sc">$</span>data,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_chains =</span> <span class="dv">4</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_samples =</span> <span class="dv">1500</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>We can automatically find segments (subgroups) with different conditional complier effects using a shallow regression tree on posterior mean CATE_C(x). The segment-level summaries in res$effects correspond to subgroup-specific average effects among compliers, obtained by averaging conditional effects within each covariate-defined segment. Differences across segments highlight departures from effect homogeneity and provide an interpretable summary of treatment effect heterogeneity.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">segment_heterogeneity</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  fit,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">min_compliers_bucket =</span> <span class="dv">50</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">plot =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">contrast =</span> <span class="cn">TRUE</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>contrast<span class="sc">$</span>summary</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        mean        sd   ci_lower  ci_upper     p_gt0</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 0.2178362 0.2267148 -0.1519342 0.5904339 0.8278333</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>plot<span class="sc">$</span>diff</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Main_files/figure-html/heterogeneity-1.png" class="img-fluid figure-img" style="width:100.0%" alt="Difference in estimated complier effects across covariate-defined segments from a shallow tree summary."></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The segment-level summaries in res$effects correspond to subgroup-specific average effects among compliers, obtained by averaging conditional effects within each covariate-defined segment. Differences across segments highlight departures from effect homogeneity and provide an interpretable summary of treatment effect heterogeneity. Segments are constructed post hoc to summarize heterogeneity in the posterior distribution of CATE_C(x).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>effects</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   segment    mean    sd ci_lower ci_upper p_gt0   n n_group</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   overall  0.0425 0.100   -0.126    0.203 0.676 800   257.3</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      x2_1 -0.0311 0.104   -0.208    0.137 0.387 383   168.7</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  not x2_1  0.1868 0.209   -0.150    0.534 0.814 417    88.6</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>plot<span class="sc">$</span>effect</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Main_files/figure-html/heterogeneity_effects-1.png" class="img-fluid figure-img" style="width:100.0%" alt="Estimated subgroup-specific average complier effects for each identified segment."></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="generalization-to-target-population-needs-updated-simulation-framework" class="level2">
+<h2 class="anchored" data-anchor-id="generalization-to-target-population-needs-updated-simulation-framework">Generalization to target population (needs updated simulation framework)</h2>
+<p>in the ps_simulate_data.R, generate a new function ps_simulate_target(), which takes the simdata object and return another simdata object, that is generated with the same weight, but different dstribution of x1 and x2. the parameter should be the following: source: a named list returned by ps_simulate_data() ?</p>
+</section>
+<section id="count-valued-z" class="level2">
+<h2 class="anchored" data-anchor-id="count-valued-z">Count-valued Z</h2>
+<p>For count or ordinal uptake <span class="math inline">\(W\)</span>, <span class="math inline">\(Z\)</span> remains binary. Each principal stratum becomes a pair <span class="math inline">\(G=(W(0),W(1))=(a,b)\)</span>, representing the uptake when the instrument is set at 2 different levels. The current ordinal model assumes <span class="math inline">\(b\leq a\)</span>: assignment can reduce uptake.</p>
+<p>The causal effect of interest is:</p>
+<p><span class="math display">\[
+E[Y (1)-Y(0)\mid G=(a,b)]
+\]</span></p>
+<p>BART models potential uptake and outcome probabilities while imputing the missing member of each pair. Fit this model with <code>uptake_type = "ordinal"</code>. See <a href="Count_data.qmd">Count data</a> for a full simulation using count data.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -1,0 +1,312 @@
+---
+title: "Introduction to princeBART"
+author: "princeBART authors"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to princeBART}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = TRUE,
+  fig.width = 8,
+  fig.height = 5,
+  out.width = "100%"
+)
+
+library(future)
+library(princeBART)
+set.seed(1)
+```
+
+## Overview
+
+princeBART implements **Principal Stratification with Bayesian Additive
+Regression Trees (BART)** for causal inference. It estimates treatment
+effects for compliers—units whose treatment status is affected by an
+instrument.
+
+If you are unfamiliar with principle stratification or BART, you may
+refer to [Link to background](other-background.qmd) for reference.
+
+While the canonical application is noncompliance in randomized
+experiments, the framework applies broadly to any setting with:
+
+- An **instrument Z** that affects treatment uptake but has no direct
+  effect on outcomes
+- An **endogenous treatment W** whose causal effect on Y is of interest
+- **Covariates X** that may confound the Z-W or W-Y relationships
+
+## The Setup
+
+We observe:
+
+- **Z**: Binary instrument (e.g., randomized assignment, geographic
+  variation, policy change)
+- **W**: Binary or endogenous treatment/exposure of interest (Later
+  generalized to count-valued Z)
+- **Y**: Binary outcome
+- **X**: Covariates
+
+And the population consists of four principal strata $G$ that we don't
+fully observe:
+
+| Stratum       | W if Z=0 | W if Z=1 |
+|---------------|----------|----------|
+| Compliers     | 0        | 1        |
+| Never-takers  | 0        | 0        |
+| Always-takers | 1        | 1        |
+| Defiers       | 1        | 0        |
+
+We also denote unobserved confounders as $U$.
+
+### Key Assumptions
+
+1.  **Conditional randomization**:
+    $Z \perp\!\!\!\perp (Y(z,w), W(z)) | X$ — the instrument is
+    as-good-as-random given covariates
+2.  **Exclusion restriction**: Z affects Y only through W
+3.  **Monotonicity**: No defiers (units for whom Z decreases W)
+
+The key estimand is the **Complier Average Causal Effect (CACE)**, also
+known as the Local Average Treatment Effect (LATE)—the causal effect of
+W on Y for units whose treatment is affected by the instrument. Writing
+$Y(w)$ for the potential outcome under received treatment $w$, the
+conditional effect is
+
+$$
+\mathrm{CATE}_C
+= E\!\left[Y(1)-Y(0)\mid G = Compliers\right].
+$$
+
+For a binary outcome, this is the difference in outcome probabilities
+under treatment and no treatment among compliers.
+
+## Simulated Example Data
+
+Let's create a simulated dataset using the build-in simulation function:
+
+```{r}
+n <- 800
+simdata = ps_simulate_data(n)
+```
+
+The following describes how the data was generated: Here the defaults
+give one continuous covariate $X_1\sim N(0,1)$, one binary covariate
+$X_2\sim\mathrm{Bernoulli}(0.5)$, and an unobserved variable
+$U\sim N(0,1)$, drawn independently. The generator follows four steps:
+
+$$
+\begin{aligned}
+P(G=g\mid X,U)
+&=\frac{\exp(\widetilde X^\top\alpha_g+\gamma_g U)}
+{\sum_{h\in\mathcal G}\exp(\widetilde X^\top\alpha_h+\gamma_h U)},
+\quad \mathcal G=\{(0,0),(0,1),(1,1)\},\\
+Z\mid X &\sim\mathrm{Bernoulli}\!\left(\operatorname{expit}(\widetilde X^\top\beta)\right),\\
+W &=(1-Z)W(0)+ZW(1),\\
+Y\mid X,U,G,W &\sim\mathrm{Bernoulli}\!\left(
+\operatorname{expit}(\widetilde X^\top\theta_G+\delta_G U+\tau_G W)\right).
+\end{aligned}
+$$
+
+The pair $G=(W(0),W(1))$ identifies the principal stratum. By default,
+each coefficient is drawn once from $N(0,1)$ for this dataset. The
+unobserved $U$ affects strata and outcomes, while assignment $Z$ depends
+only on the observed covariates.
+
+The ps_simulate_data(n) is flexible to generate more complex data. You
+can find additional information at [Link to Simulation](Simulation.qmd)
+
+The resulting `simdata` has four components: The `data` component is the
+observed data:
+
+```{r}
+head(simdata$data, 5)
+```
+
+The other three components retain information that is known in a
+simulation:
+
+- `alldata` contains the observed data, the true stratum `G`, unobserved
+  `U`, potential uptake `W0` and `W1`, the assignment probability
+  `propensity`, and conditional outcome means `mean_y0` and `mean_y1`.
+  These means correspond to assignment $Z=0$ and $Z=1$; for binary
+  compliers they also correspond to received treatment $W=0$ and $W=1$.
+- `weights` contains the coefficients actually used to generate the
+  data. Reusing it allows new datasets to be generated under the same
+  model.
+- `stratum_weights` is a matrix whose rows index `W0` and columns index
+  `W1`. Zero entries exclude strata; positive entries set relative
+  weights before normalization, rather than marginal stratum
+  probabilities.
+
+```{r simulation-truth-output}
+head(simdata$alldata[c("G", "U", "W0", "W1", "propensity",
+                      "mean_y0", "mean_y1")], 5)
+names(simdata$weights)
+simdata$stratum_weights
+```
+
+## Basic Usage
+
+princeBART uses a 2SLS-style formula: `Y ~ covariates | Z | W`. The
+following code will fit the model and print the summary:
+
+```{r formula-usage, cache=TRUE}
+# Set up parallel backend
+plan(multisession, workers = 4)
+
+# Fit the model
+fit <- prince_BART(
+  Y ~ x1_1 + x2_1 | Z | W,
+  data = simdata$data,
+  n_chains = 4,
+  n_warmup = 1000,
+  n_samples = 1500
+)
+
+summary(fit)
+```
+
+By default, the mixed ATE for Compliers are printed. In this simulation,
+the result is `0.1876226`. There are other effects that can be
+calculated from the fitted object, such as mixed ATE for treated
+Compliers. You can find additional information at [Link to
+effects](Effects.qmd)
+
+We identify the simulated compliers using their known potential uptake
+and average their conditional mean differences:
+
+$$
+\tau_{C,\mathrm{truth}}
+=\frac{1}{n_C}\sum_{i:W_i(0)=0,\ W_i(1)=1}
+\left(\mathrm{mean\_y1}_i-\mathrm{mean\_y0}_i\right).
+$$
+
+This is the expected sample ATE conditional on the simulated covariates,
+$U$, and strata. The generator does not return both realized binary
+potential outcomes, so their realized sample ATE is unavailable.
+
+```{r complier-ground-truth}
+truth <- simdata$alldata
+is_complier <- truth$W0 == 0 & truth$W1 == 1
+stopifnot(any(is_complier))
+
+true_sate_c <- mean((truth$mean_y1 - truth$mean_y0)[is_complier])
+true_sate_c
+```
+
+We can also analyze the data using Two Stage Least Squares (2SLS), which
+is the convention approach for principle stratification.
+
+2SLS first predicts received treatment `W` from instrument `Z` and the
+covariates, then regresses `Y` on that prediction and the same
+covariates. Run the fitting block above and the comparison block below
+interactively, or enable evaluation of both blocks when rendering. The
+comparison uses the sample estimand from `extract()`; the earlier
+default `summary(fit)` reports the mixed estimand.
+
+```{r effect-comparison}
+first_stage <- lm(W ~ Z + x1_1 + x2_1, data = simdata$data)
+two_sls_data <- simdata$data
+two_sls_data$W_hat <- fitted(first_stage)
+fit_2sls <- lm(Y ~ W_hat + x1_1 + x2_1, data = two_sls_data)
+tsls_estimates <- unname(stats::coef(fit_2sls)["W_hat"])
+
+bart_effects <- as.data.frame(extract(fit, "sate_c")[[2]])
+bart_mean <- bart_effects$mean[
+  bart_effects$variable == "Sample ATE for compliers"
+]
+
+comparison <- data.frame(
+  Method = c("Simulation truth",
+             "princeBART posterior mean",
+             "2SLS estimates"),
+  Estimate = c(true_sate_c, bart_mean, tsls_estimates)
+)
+knitr::kable(comparison, digits = 3)
+```
+
+
+## Effect Heterogeneity by Segments (mostly unchanged, but we may need some non-linearity?)
+
+```{r, cache=TRUE}
+simdata = ps_simulate_data(n, x1_transform = "relu")
+fit <- prince_BART(
+  Y ~ x1_1 + x2_1 | Z | W,
+  data = simdata$data,
+  n_chains = 4,
+  n_warmup = 1000,
+  n_samples = 1500
+)
+```
+
+
+We can automatically find segments (subgroups) with different
+conditional complier effects using a shallow regression tree on
+posterior mean CATE_C(x). The segment-level summaries in res\$effects
+correspond to subgroup-specific average effects among compliers,
+obtained by averaging conditional effects within each covariate-defined
+segment. Differences across segments highlight departures from effect
+homogeneity and provide an interpretable summary of treatment effect
+heterogeneity.
+
+```{r heterogeneity, fig.width=8, fig.height=5, out.width="100%", fig.alt="Difference in estimated complier effects across covariate-defined segments from a shallow tree summary."}
+res <- segment_heterogeneity(
+  fit,
+  min_compliers_bucket = 50,
+  plot = TRUE,
+  contrast = TRUE
+)
+
+res$contrast$summary
+res$plot$diff
+
+```
+
+The segment-level summaries in res\$effects correspond to
+subgroup-specific average effects among compliers, obtained by averaging
+conditional effects within each covariate-defined segment. Differences
+across segments highlight departures from effect homogeneity and provide
+an interpretable summary of treatment effect heterogeneity. Segments are
+constructed post hoc to summarize heterogeneity in the posterior
+distribution of CATE_C(x).
+
+```{r heterogeneity_effects, fig.width=8, fig.height=5, out.width="100%", fig.alt="Estimated subgroup-specific average complier effects for each identified segment."}
+res$effects
+res$plot$effect
+```
+
+## Generalization to target population (needs updated simulation framework)
+
+in the ps_simulate_data.R, generate a new function ps_simulate_target(),
+which takes the simdata object and return another simdata object, that
+is generated with the same weight, but different dstribution of x1 and
+x2. the parameter should be the following: source: a named list returned
+by ps_simulate_data() ?
+
+## Count-valued Z
+
+For count or ordinal uptake $W$, $Z$ remains binary. Each principal
+stratum becomes a pair $G=(W(0),W(1))=(a,b)$, representing the uptake
+when the instrument is set at 2 different levels. The current ordinal
+model assumes $b\leq a$: assignment can reduce uptake.
+
+The causal effect of interest is:
+
+$$
+E[Y (1)-Y(0)\mid G=(a,b)]
+$$
+
+BART models potential uptake and outcome probabilities while imputing
+the missing member of each pair. Fit this model with
+`uptake_type = "ordinal"`. See [Count data](Count_data.qmd) for a full
+simulation using count data.
