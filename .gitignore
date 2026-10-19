@@ -8,3 +8,6 @@ analyses/misc.rmd
 /output
 /doc
 .Rproj.user
+.Rhistory
+.DS_Store
+
