@@ -1,0 +1,269 @@
+---
+title: "Price BART summary of terms and sensivity analysis in paper"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    html-math-method: mathjax
+---
+
+::: callout-note
+**NOT YET FULL CHECKED!**
+
+Claude-generated summary of the measures used in the paper, comparison with 2sls, and sensitivity analyses.
+
+LA generated this when starting to work on a document to explain difference between prince Bart and 2sls for a lay audience - just keeping as a reference in case it's useful later on.
+:::
+
+Source: Godoy Garraza, L., Speizer, I. S., & Alkema, L. (2026). *Combining BART and Principal Stratification to Estimate the Effect of Intermediate Variables on Primary Outcomes with Application to Estimating the Effect of Family Planning on Employment in Nigeria and Senegal.* Statistics and Public Policy, 13:1. DOI: 10.1080/2330443X.2026.2672981.
+
+# Technical summary
+
+**Notation.** Binary instrument $Z$ (FP program assignment), binary treatment $W$ (adoption of modern contraception), binary outcome $Y$ (employment), covariates $X$; principal strata $G^* \in \{n, c, a\}$ (no defiers); $\pi_c(x) = P(G^*=c \mid X=x)$; instrument propensity $e(x) = P(Z=1 \mid X=x)$; $\text{CATE}_c(x) = E[Y^*(1)-Y^*(0) \mid X=x, G^*=c]$.
+
+## What each approach targets
+
+|   | Prince BART | Linear 2SLS |
+|------------------------|------------------------|------------------------|
+| Conditional complier effect | $\text{CATE}_c(x)$ — full posterior, any $x$ | Not produced (a single coefficient) |
+| Stratum probabilities | $\pi_c(x), \pi_a(x), \pi_n(x)$ per unit | Average shares only, via first stage: $\pi_c = \text{ITT}_W$ |
+| Overall complier effect | $\text{MATE}_c = \dfrac{\sum_i \text{CATE}_c(x_i)\pi_c(x_i)}{\sum_i \pi_c(x_i)}$, a consistent estimand for the population LATE | No covariates, $Z$ randomized: Wald = LATE. With covariates: $\beta_{2SLS}$, a weighted average of $\text{CATE}_c(x)$ with weights $\propto P(x)\,e(x)(1-e(x))\,\pi_c(x)$ (saturated), possibly non-convex (additive $X$) |
+| Subgroup effects | $\text{MCATE}_c(I)$ for any segment $I$ | Only via interacted specifications, with the same weighting issue |
+| Target-population effect | $\text{PATE} = \int \text{CATE}_c(x)\, dP_{X \mid T=1}(x)$ via scaled Bayesian bootstrap | Not available without extra modeling |
+| Outcome scale | Bounded in $[-1, 1]$ (probability model) | Unbounded ratio; can fall outside $[-1, 1]$ |
+| Also in the `princeBART` package | $\text{MATT}_c$ (mixed, among $Z=1$), $\text{SATE}_c$ / $\text{SATT}_c$ (sample averages over imputed compliers), complier potential-outcome means $E[Y(0) \mid c]$, $E[Y(1) \mid c]$ | Complier means via 2SLS of $WY$, $(1-W)Y$ on $W$ |
+
+## Key relationships
+
+1.  **Population LATE** is the causal estimand $E[Y^*(1)-Y^*(0) \mid G^*=c] = \dfrac{\int \text{CATE}_c(x)\pi_c(x)\,dP_X(x)}{\int \pi_c(x)\,dP_X(x)}$. This identity holds under Assumptions 1–4 regardless of any model.
+2.  $\text{MATE}_c$ uses the same $\text{CATE}_c(\cdot)$ and $\pi_c(\cdot)$ but averages over the sample covariates; $\text{MATE}_c \to \text{LATE}$ as $n \to \infty$. Its posterior excludes sampling variability in $X$.
+3.  $\beta_{2SLS} = \text{LATE}$ if (a) the effect is homogeneous, $\text{CATE}_c(x) \equiv \beta$ (then LATE = $\text{MATE}_c$ = ATE = PATE = $\beta$), or (b) the specification is saturated in $X$ **and** $e(x)$ is constant. Otherwise, $\beta_{2SLS}$ targets a differently weighted average of $\text{CATE}_c(x)$.
+4.  $\text{PATE} \neq \text{LATE}$ in general: it re-weights $\text{CATE}_c(x)$ by the target covariate distribution (requires conditional transportability, Assumption 5).
+
+# Vocabulary: estimands, estimators, estimates
+
+| Term | Meaning | Example |
+|------------------------|------------------------|------------------------|
+| **Causal estimand** | The target quantity, defined in potential outcomes; model- and data-free | $E[Y^*(1)-Y^*(0) \mid G^*=c]$ |
+| **Statistical (identified) estimand** | Functional of the observed-data distribution that equals the causal estimand under assumptions | Wald ratio $\text{ITT}_Y/\text{ITT}_W$ |
+| **Estimand of an estimator** | What the estimator converges to (probability limit); may or may not equal the causal estimand | plim of 2SLS with additive $X$ |
+| **Estimator / estimate** | The rule applied to data / the resulting number | `ivreg` output; Prince BART posterior mean |
+
+"LATE", "$\text{MATE}_c$" and "PATE" in this document refer to **estimands** (theoretical quantities). "The 2SLS estimand" refers to the probability limit of the 2SLS estimator. Much of the LATE-vs-2SLS literature asks whether these coincide.
+
+Estimands can also be defined at different levels of the population:
+
+| Level | Averages over | Example | Uncertainty when estimated |
+|------------------|------------------|------------------|------------------|
+| Super-population | Population covariate distribution $P_X$ | Population LATE, PATE | Model + sampling of $X$ |
+| Mixed (sample-conditional) | Empirical covariates $x_1,\dots,x_n$ of the sample, population functions $\text{CATE}_c(\cdot)$, $\pi_c(\cdot)$ | $\text{MATE}_c$, $\text{MCATE}_c(I)$ | Model only |
+| Finite sample | Individual effects of the units that actually are compliers in the sample | $\text{SATE}_c = \frac{1}{n_c}\sum_{i: G_i^*=c}\left(Y_i^*(1)-Y_i^*(0)\right)$ | Also latent strata and individual potential outcomes |
+
+"Mixed" follows Li, Ding & Mealli (2023), as used in the paper.
+
+# Setup and notation
+
+- $Z_i \in \{0,1\}$: assignment to the FP program (early vs. delayed roll-out city) — the **instrument**.
+- $W_i \in \{0,1\}$: adoption of modern contraception after baseline — the **treatment**.
+- $Y_i \in \{0,1\}$: employment in the 12 months before endline — the **outcome**.
+- $X_i$: baseline covariates (incl. baseline employment).
+- Principal strata $G_i^* = g\big(W_i^*(0), W_i^*(1)\big) \in \{n, c, d, a\}$ (never-taker, complier, defier, always-taker); monotonicity rules out defiers.
+- $T_i$: indicator for membership of the target population ($T_i = 1$) vs. the source sample ($T_i = 0$).
+
+**Identifying assumptions (Box 1 of the paper).** Internal validity: (1) conditional unconfoundedness of $Z$ given $X$; (2) overlap, $0 < e(x) < 1$; (3) monotonicity, $W^*(1) \ge W^*(0)$; (4) exclusion restriction, $Y^*(0,w) = Y^*(1,w)$. External validity: (5) conditional transportability, $E[Y^*(1)-Y^*(0) \mid X, G^*=c] = E[Y^*(1)-Y^*(0) \mid X]$; (8) included support, $\text{supp}\,P_{X \mid T=1} \subseteq \text{supp}\,P_{X \mid G^*=c}$.
+
+# Measures in the paper
+
+## A. Effects in the source sample (Prince BART)
+
+| Measure | Expression | What it is / reported values |
+|------------------------|------------------------|------------------------|
+| $\text{CATE}_c(x)$ (eq. 4) | $E\left[Y_i^*(1) - Y_i^*(0) \mid X_i = x,\ G_i^* = c\right]$ | Conditional average treatment effect among compliers. Basic object; posterior draws from the BART outcome models, $\Phi_{1c}(x) - \Phi_{0c}(x)$. |
+| $\pi_g(x)$ | $P\left(G_i^* = g \mid X_i = x\right)$ | Principal-stratum probabilities (complier; always- vs. never-taker among non-compliers), each a probit BART. Used as weights. Estimated complier share in trimmed samples: 7.7% (sd 0.9%) Nigeria, 4.8% (sd 0.7%) Senegal. |
+| $\text{MATE}_c$ (eq. 9) | $\dfrac{\sum_{i} \text{CATE}_c(x_i)\, \pi_c(x_i)}{\sum_{i} \pi_c(x_i)}$ | "Mixed" average treatment effect among compliers: combines population parameters ($\text{CATE}_c$, $\pi_c$) with the *empirical* covariate distribution of the source sample. Headline complier effect: **0.366 (0.133)** Nigeria, **0.473 (0.155)** Senegal (Table 1). |
+| $\text{MCATE}_c(I)$ (eq. 8) | $\dfrac{\sum_{i \in I} \text{CATE}_c(x_i)\, \pi_c(x_i)}{\sum_{i \in I} \pi_c(x_i)}, \quad I \equiv \{ i : X_i^K = a \}$ | Same complier-weighted average, restricted to a **segment** $I$ (see below). Reported for 8 segments per country (Figs 5–6, Tables I1–I2): Nigeria from −0.20 to 0.65; Senegal from 0.27 to 0.58. |
+
+**Segment** $I$. A segment is a subset of source-sample women who share the same values $a$ on a small subset of baseline characteristics $X^K \subseteq X$, i.e. $I \equiv \{ i : X_i^K = a \}$. In the paper the segments are the leaves of a *surrogate shallow tree*: a single regression tree (max. depth 3) fit to the BART posterior-mean $\text{CATE}_c(x_i)$, using a handful of predictors pre-selected with surrogate "deep" trees (Appendix B.6). Each segment is therefore defined by a combination of up to three covariates, e.g. in Nigeria "married or separated, worked the year before baseline, primary education or less" (largest effect, 0.65) vs. "never married, medium–highest wealth, did not work the year before baseline" (smallest, −0.20). Weighting by $\pi_c(x_i)$ makes $\text{MCATE}_c(I)$ an average over the (latent) *compliers* in that segment; $\text{MATE}_c$ is the special case where $I$ is the whole sample.
+
+## B. Generalization to target populations (Prince BART Generalized, PBG)
+
+| Measure | Expression | What it is / reported values |
+|------------------------|------------------------|------------------------|
+| $\text{CATE}(x)$ | $E\left[Y_i^*(1) - Y_i^*(0) \mid X_i = x\right]$ | Conditional average treatment effect (any stratum). Under conditional transportability (Assumption 5), $\text{CATE}(x) = \text{CATE}_c(x)$. |
+| $\text{PATE}$ (eqs. 2, 3, 10) | $E\left[Y_i^*(1) - Y_i^*(0) \mid T_i = 1\right] = \int \text{CATE}_c(x)\, dP_{X \mid T=1}(x)$ | Population average treatment effect: average effect if everyone in the target population adopted modern contraception vs. no one did. |
+| $\text{PATE}_{BB}$ (eq. 11) | $\sum_q \varphi_q\, f_q\, \text{CATE}_q^{PSU}, \quad f_q = n_q w_q, \quad \text{CATE}_q^{PSU} = \frac{1}{n_q}\sum_{j: Q_j = q} \text{CATE}(x_j)$ | Estimator of PATE: scaled Bayesian bootstrap over DHS PSUs $q$ with Dirichlet (Haldane-prior) weights $\varphi_q$ and survey weights $w_q$; draw $d$ of $\varphi$ is combined with draw $d$ of $\text{CATE}$. FP-attitude covariates missing in DHS are imputed via BART (eq. 12). |
+
+Reported PATEs (Table 2; posterior mean (sd)):
+
+| Target population | Nigeria | Senegal |
+|------------------------|------------------------|------------------------|
+| $\text{MATE}_c$ (source compliers, for reference) | 0.366 (0.133) | 0.473 (0.155) |
+| Urban, same states/regions | 0.518 (0.145) | 0.489 (0.181) |
+| Urban, all states/regions | 0.495 (0.143) | 0.483 (0.182) |
+| Urban and rural, all | 0.527 (0.146) | 0.479 (0.195) |
+
+Note that PATE re-weights $\text{CATE}_c(x)$ by $P_{X \mid T=1}$ **without** the $\pi_c(x)$ weights: the target is everyone, not only compliers.
+
+# The LATE
+
+## Definition
+
+The **local average treatment effect** (Imbens & Angrist 1994; Angrist, Imbens & Rubin 1996) is the average effect of $W$ on $Y$ among compliers — units whose treatment status is changed by the instrument:
+
+$$
+\text{LATE} \equiv E\left[\,Y^*(1) - Y^*(0) \mid G^* = c\,\right] = E\left[\,Y^*(1) - Y^*(0) \mid W^*(1) > W^*(0)\,\right].
+$$
+
+"Local" because it refers to one subpopulation; always- and never-takers do not change $W$ when $Z$ changes, so the instrument carries no information about their effects.
+
+## Identification
+
+Without covariates and with $Z$ randomized, under Assumptions 1–4,
+
+$$
+\text{LATE} = \frac{E[Y \mid Z=1] - E[Y \mid Z=0]}{E[W \mid Z=1] - E[W \mid Z=0]} = \frac{\text{ITT}_Y}{\text{ITT}_W}.
+$$
+
+Reasoning: decompose $\text{ITT}_Y$ by stratum. Never- and always-takers contribute zero (their $W$ does not change; exclusion rules out a direct effect of $Z$); there are no defiers; so $\text{ITT}_Y = \pi_c \cdot \text{LATE}$. The first stage is $\text{ITT}_W = \pi_c$.
+
+With $Z$ conditionally random given $X$, the same logic holds within each $x$, giving the conditional LATE
+
+$$
+\text{LATE}(x) = \text{CATE}_c(x) = \frac{E[Y \mid Z=1, X=x] - E[Y \mid Z=0, X=x]}{E[W \mid Z=1, X=x] - E[W \mid Z=0, X=x]},
+$$
+
+and the unconditional LATE (Frölich 2007)
+
+$$
+\text{LATE} = \frac{E_X\left[E[Y \mid Z=1, X] - E[Y \mid Z=0, X]\right]}{E_X\left[E[W \mid Z=1, X] - E[W \mid Z=0, X]\right]} = \frac{\int \text{CATE}_c(x)\pi_c(x)\,dP_X(x)}{\int \pi_c(x)\,dP_X(x)}.
+$$
+
+The complier weights $\pi_c(x)$ appear naturally: LATE is an average over compliers, and compliers are more common where $\pi_c(x)$ is larger.
+
+## Special cases
+
+- One-sided noncompliance (no always-takers): LATE = ATT.
+- Constant effect: LATE = ATE.
+- Neither holds in general; compliers can differ from the population (4.8–7.7% of the source samples in the paper), which motivates the generalization step to PATE.
+
+# LATE vs. $\text{MATE}_c$
+
+Both are estimands; they differ in the covariate distribution averaged over:
+
+$$
+\text{LATE} = \frac{\int \text{CATE}_c(x)\,\pi_c(x)\,dP_X(x)}{\int \pi_c(x)\,dP_X(x)}
+\qquad\text{vs.}\qquad
+\text{MATE}_c = \frac{\sum_{i=1}^n \text{CATE}_c(x_i)\,\pi_c(x_i)}{\sum_{i=1}^n \pi_c(x_i)}.
+$$
+
+- $\text{MATE}_c$ replaces $P_X$ by the empirical distribution of the sample. It is a fixed quantity given $x_1, \dots, x_n$, but unknown because $\text{CATE}_c(\cdot)$ and $\pi_c(\cdot)$ are unknown — so it is an estimand, not an estimate.
+- $\text{MATE}_c = \text{LATE}$ exactly if $\text{CATE}_c(x)$ is constant; otherwise they differ in finite samples, with $\text{MATE}_c \to \text{LATE}$ as $n \to \infty$.
+- The posterior sd of $\text{MATE}_c$ excludes sampling variability in $X$; this is one reason why PATE posterior sds (which add Bayesian-bootstrap uncertainty for $P_{X \mid T=1}$) are larger than $\text{MATE}_c$ sds in the paper.
+- The sample-level analogue $\text{SATE}_c$ (average of individual effects over the units that actually are compliers) is a third, distinct estimand, also available in the `princeBART` package.
+
+# What does 2SLS target?
+
+## Homogeneous effect
+
+If the outcome model $Y = \alpha + \beta W + X'\gamma + \varepsilon$ with a single $\beta$ is correct (plus a valid first stage), then $\text{CATE}_c(x) = \beta$ for all $x$ and
+
+$$
+\text{LATE} = \text{MATE}_c = \text{ATE} = \text{PATE} = \beta_{2SLS} = \beta.
+$$
+
+All distinctions between estimands vanish. (With binary $Y$ this is a linear probability model, which can hold at best approximately.)
+
+## Heterogeneous effects, saturated specification
+
+With covariate-cell fixed effects and instrument $Z$, the 2SLS estimand is the ratio of variance-weighted reduced-form and first-stage effects:
+
+$$
+\beta_{2SLS} = \frac{\sum_x P(x)\, e(x)(1-e(x))\, \pi_c(x)\, \text{CATE}_c(x)}{\sum_x P(x)\, e(x)(1-e(x))\, \pi_c(x)}.
+$$
+
+Compared with LATE (weights $\propto P(x)\pi_c(x)$), the 2SLS weights carry the extra factor $e(x)(1-e(x)) = \text{Var}(Z \mid X = x)$: cells where the instrument is balanced count more, cells where nearly everyone (or no one) is assigned count less. Hence $\beta_{2SLS} = \text{LATE}$ only if $\text{CATE}_c(x)$ is constant or $e(x)$ is constant (fully randomized instrument, as in simulation Design A). Using $Z \times$ cell interactions as instruments (Angrist & Imbens 1995) changes the weights to $\propto P(x)\,e(x)(1-e(x))\,\pi_c(x)^2$ — still not LATE.
+
+## Heterogeneous effects, additive covariates
+
+With $X$ entered additively but not saturated, the weights can be non-convex (negative) unless additional conditions hold, e.g. a correctly specified (linear) instrument propensity / "rich covariates" (Blandhol et al. 2022; Słoczyński 2024). The estimand then need not lie between the smallest and largest $\text{CATE}_c(x)$.
+
+## Summary statement
+
+> Under Assumptions 1–4, the causal estimand LATE equals the complier-weighted average of $\text{CATE}_c(x)$ over the population covariate distribution; $\text{MATE}_c$ is the same average over the sample's covariates and converges to LATE. Linear 2SLS targets LATE if the effect is homogeneous (then all estimands equal $\beta$). Under heterogeneity, it targets LATE only with a saturated specification **and** a constant instrument propensity $e(x)$; otherwise its estimand is a differently weighted average of $\text{CATE}_c(x)$.
+
+# Measures produced by simple 2SLS
+
+## What the paper does with 2SLS
+
+2SLS is used only as a benchmark: a linear probability model fit with `ivreg`, with $X$ entered additively. A single coefficient per country is reported (Table 1: 0.429 (0.223) Nigeria; 2.389 (0.990) Senegal — outside the logical range $[-1, 1]$). The paper does not report the first stage, reduced form, or other by-products of 2SLS.
+
+## Standard measures from a simple IV / 2SLS analysis
+
+| Measure | Expression (binary $Z$, $W$) | Interpretation |
+|------------------------|------------------------|------------------------|
+| First stage / $\text{ITT}_W$ | $E[W \mid Z=1] - E[W \mid Z=0]$ | Effect of assignment on uptake. Under monotonicity equals the complier share $\pi_c$ — comparable to Prince BART's 7.7% / 4.8%. |
+| Reduced form / $\text{ITT}_Y$ | $E[Y \mid Z=1] - E[Y \mid Z=0]$ | Effect of program assignment on employment (policy-relevant ITT). Under exclusion, $\text{ITT}_Y = \pi_c \times \text{LATE}$. |
+| Wald / LATE | $\text{ITT}_Y / \text{ITT}_W$ | Complier average effect; equals 2SLS without covariates. Unbounded in finite samples. |
+| 2SLS with additive $X$ | $\hat\beta$ from $Y = \alpha + \beta W + X'\gamma + \varepsilon$, with $W$ instrumented by $Z$ (first stage $W = \delta + \lambda Z + X'\eta + \nu$) | See previous section: equals LATE only under homogeneity or saturated $X$ with constant $e(x)$. |
+| Saturated / interacted 2SLS | Cell fixed effects; instrument $Z$ or $Z \times 1\{X \in \text{cell}_k\}$ | Weighted average of cell-specific LATEs, weights $\propto P(x)e(x)(1-e(x))\pi_c(x)$ or $\propto P(x)e(x)(1-e(x))\pi_c(x)^2$. |
+| Compliance-type shares | $\pi_a = E[W \mid Z=0]$, $\pi_n = 1 - E[W \mid Z=1]$, $\pi_c = 1 - \pi_a - \pi_n$ | Population shares of strata, from the first stage under monotonicity. |
+| Complier potential-outcome means | $E[Y(1) \mid c] = \dfrac{E[WY \mid Z=1] - E[WY \mid Z=0]}{\pi_c}$, $\quad E[Y(0) \mid c] = \dfrac{E[(1-W)Y \mid Z=1] - E[(1-W)Y \mid Z=0]}{-\pi_c}$ | Baseline levels for compliers (Imbens & Rubin 1997; Abadie 2002); obtainable by 2SLS of $WY$ and $(1-W)Y$ on $W$. Can fall outside $[0,1]$. |
+| Complier covariate means | $E[X \mid c] = \dfrac{E[\kappa X]}{E[\kappa]}$, $\quad \kappa = 1 - \dfrac{W(1-Z)}{1-e(X)} - \dfrac{(1-W)Z}{e(X)}$ | Profile of compliers via Abadie (2003) $\kappa$-weights; comparable to Appendix H Tables H2–H3. |
+| OLS of $Y$ on $W$ (+ $X$) | $\hat\beta_{OLS}$ | Naive observational contrast; gap with 2SLS indicates selection into $W$. |
+| Diagnostics | First-stage $F$ (weak instrument; $F>10$ rule of thumb or Lee et al. 2022 $tF$); Durbin–Wu–Hausman test | Over-identification tests do not apply with a single instrument. |
+| Inference | Heteroskedasticity-robust SEs; cluster-robust at city level | With only 6 cities, cluster-robust SEs are unreliable — wild-cluster bootstrap or randomization inference are alternatives (cf. paper's §8 limitation). |
+
+## Contrast with Prince BART
+
+- 2SLS/Wald return a single number on the linear-probability scale with no $\text{CATE}(x)$, so they cannot be generalized to a PATE without additional modeling (e.g. Angrist & Fernández-Val 2010, or reweighting interacted-2SLS cell LATEs to the target covariate distribution).
+- Prince BART targets $\text{MATE}_c$ and $\text{CATE}_c(x)$ directly, with the complier weights $\pi_c(x)$ that define LATE, respects the $[-1, 1]$ outcome scale, and provides full posterior uncertainty that propagates into the PATE.
+
+# References (beyond the paper)
+
+- Abadie, A. (2002). Bootstrap tests for distributional treatment effects in instrumental variable models. *JASA*, 97, 284–292.
+- Abadie, A. (2003). Semiparametric instrumental variable estimation of treatment response models. *J. Econometrics*, 113, 231–263.
+- Angrist, J. D., & Imbens, G. W. (1995). Two-stage least squares estimation of average causal effects in models with variable treatment intensity. *JASA*, 90, 431–442.
+- Angrist, J. D., Imbens, G. W., & Rubin, D. B. (1996). Identification of causal effects using instrumental variables. *JASA*, 91, 444–455.
+- Blandhol, C., Bonney, J., Mogstad, M., & Torgovitsky, A. (2022). When is TSLS actually LATE? NBER WP 29709. <https://www.nber.org/papers/w29709>
+- Frölich, M. (2007). Nonparametric IV estimation of local average treatment effects with covariates. *J. Econometrics*, 139, 35–75.
+- Imbens, G. W., & Angrist, J. D. (1994). Identification and estimation of local average treatment effects. *Econometrica*, 62, 467–475.
+- Lee, D. S., McCrary, J., Moreira, M. J., & Porter, J. (2022). Valid t-ratio inference for IV. *AER*, 112, 3260–3290.
+- Li, F., Ding, P., & Mealli, F. (2023). Bayesian causal inference: a critical review. *Phil. Trans. R. Soc. A*, 381, 20220153.
+- Słoczyński, T. (2024). When should we (not) interpret linear IV estimands as LATE? <https://arxiv.org/abs/2011.06695>
+
+# Appendix
+
+Appendix contains summary of the other analyses in paper. \# C. Sensitivity and robustness measures
+
+| Check | Measure | Result |
+|------------------------|------------------------|------------------------|
+| Unobserved city-level confounding (§7.1, Fig 7; App. C) | Complier effect as a function of $\zeta$, where a confounder $U = Z$ shifts the counterfactual $Y^*(1-Z)$ on the probit scale by $\kappa = \nu \zeta$; $\nu$ = residual SD of city intercepts ($\hat\nu = 0.21$ Nigeria, $0.16$ Senegal) | 90% CI includes 0 only for $\zeta \gtrsim 3$ (Nigeria), $\zeta \gtrsim 5$ (Senegal). |
+| Support inclusion (§7.2, Fig 8, Table 3) | Selection score $s(X_i) = P(G_i^* = c, T_i = 0 \mid X_i) = P(G_i^*=c \mid X_i, T_i=0)\,P(T_i=0 \mid X_i)$; target women below the 5th percentile of compliers' standardized logit score get effect 0, PATE recomputed | Nigeria: 0.287 / 0.218 / 0.126; Senegal: 0.384 / 0.337 / 0.211 (urban same states / urban all / all). |
+| Conditional transportability, nonparametric (§7.3, Fig 9) | Sharp PATE bounds (Nie, Imbens & Wager 2021) with density ratio $r_i = \frac{f(U_i \mid X_i, T_i=0)}{f(U_i \mid X_i, G_i^*=c)} \in [1/\Lambda, \Lambda]$, solved by linear programming | Lower 95% limit of minimum PATE crosses 0 at $\Lambda \approx 2$ (Nigeria), $\approx 1.4$ (Senegal). |
+| Conditional transportability, parametric (App. K, Fig K1) | $\text{PATE}_\xi = E_{X,U \mid T=1}\,\text{CATE}(X,U)$, $\text{CATE}(x,u) = h\big(E(Y \mid W=1,x) - E(Y \mid W=0,x) + u\kappa\big)$, $U \mid T=1 \sim \text{Bern}(\xi)$, $h$ truncates to $[-1,1]$; $\kappa = 0.37$ (Nigeria), $0.18$ (Senegal) | Prevalence $\xi$ must exceed ≈ 0.5 for the 95% CI to include 0. |
+| Imputation of missing FP-attitude covariates (App. J, Table J1) | PATE under conservative single imputation (attitude pattern with smallest complier effect assigned to all DHS women) | Nigeria 0.46–0.49; Senegal ≈ 0.45 (vs. 0.48–0.53 in main analysis). |
+
+# D. Comparison estimators and simulation metrics
+
+## Empirical comparison of $\text{MATE}_c$ (Table 1)
+
+| Method                                | Nigeria       | Senegal         |
+|---------------------------------------|---------------|-----------------|
+| 2SLS (additive $X$)                   | 0.429 (0.223) | 2.389 (0.990)\* |
+| $\kappa$-weighting (normalized, CBPS) | 0.435 (0.222) | 2.321 (0.969)\* |
+| PStrata (parametric Bayesian PS)      | 0.286 (0.120) | 0.217 (0.136)   |
+| Prince BART                           | 0.366 (0.133) | 0.473 (0.155)   |
+
+\* Outside the logical range $[-1, 1]$ for a probability difference.
+
+## Simulation study (§5, Figs 2–3, App. F)
+
+- DGPs A–D from Heiler (2022) / Słoczyński, Uysal & Wooldridge (2025), with a dichotomized outcome; $N \in \{500, 1000\}$; overlap $\delta \in \{0.01, 0.02, 0.05\}$; 400 replications.
+- Metrics: MSE relative to 2SLS (2SLS = 1), absolute bias, empirical coverage of 95% intervals.
+- Findings: 2SLS beats $\kappa$-weighting in A–B, the reverse in C–D; PStrata improves on 2SLS in most settings but lags $\kappa$-weighting in C–D; Prince BART is best or near-best throughout, with near-nominal coverage (2SLS and PStrata under-cover in C–D).
+
+## Notes / possible inconsistencies in the paper
+
+- Text (§6.1) gives PStrata for Senegal as "0.15 (sd 0.14)", Table 1 gives 0.217 (0.136).
+- Appendix F text refers to "three estimators", but Tables F1–F4 report four.

@@ -10,4 +10,6 @@ analyses/misc.rmd
 .Rproj.user
 .Rhistory
 .DS_Store
+*_files/
+*.html
 

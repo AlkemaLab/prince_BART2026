@@ -1,0 +1,459 @@
+---
+title: "A comparison between 2SLS and Prince BART"
+subtitle: "An introduction for applied researchers who use instrumental variables"
+format:
+  html:
+    toc: true
+    number-sections: true
+    code-fold: true
+    html-math-method: mathjax
+execute:
+  warning: false
+  message: false
+---
+
+
+# Summary
+
+If you use two-stage least squares (2SLS) with a binary instrument, you are estimating an effect **for compliers**: the people whose treatment status is changed by the instrument. That is a good target, and Prince BART aims at the same one. The difference is in what happens once the setting gets realistic:
+
+1.  **When the instrument is only "as good as random" after controlling for covariates**, 2SLS with controls no longer averages the effect over the compliers. It quietly re-weights subgroups by how balanced the instrument is in each one. The number you get can be far from the complier effect you think you are reporting.
+2.  **When few people respond to the instrument** (a weak first stage), the 2SLS ratio can give effects that are impossible, such as a 239-percentage-point increase in a probability.
+3.  **When effects differ across people**, 2SLS gives one number. Prince BART gives the effect *as a function of covariates*. That tells you who benefits most, and it lets you translate the result to the population you care about, which is usually not the compliers.
+
+The rest of this document explains these points with toy examples where we know the truth.
+
+# What question are we answering?
+
+We use the running example from Godoy Garraza, Speizer & Alkema (2026):
+
+- **Instrument (**$Z$): whether a woman lives in a city that received a family planning (FP) program early.
+- **Treatment (**$W$): whether she starts using modern contraception.
+- **Outcome (**$Y$): whether she is employed four years later.
+
+We want the effect of contraceptive use on employment. Women choose whether to use contraception, so we can't compare users and non-users directly. The program is the instrument: it nudges some women into using contraception and, we assume, affects employment only through that channel.
+
+Women fall into three groups, depending on how they respond to the program:
+
+| Group | Uses contraception without the program? | With the program? | What we can learn about their effect |
+|------------------|------------------|------------------|------------------|
+| **Always-takers** | yes | yes | nothing: the program doesn't change their behavior |
+| **Never-takers** | no | no | nothing, for the same reason |
+| **Compliers** | no | yes | **this is where the instrument tells us something** |
+
+Any instrumental-variables method can only learn the effect **for compliers** directly. That effect has a name, the **local average treatment effect (LATE)**. Three different "effects" come up in this document:
+
+| Quantity | In words | Who it is about |
+|------------------------|------------------------|------------------------|
+| **LATE** (complier effect) | Average effect among women who start contraception *because of* the program | Compliers in the study population |
+| **Subgroup complier effects** | The same, separately for groups of women (e.g. by education) | Compliers within a subgroup |
+| **PATE** (population effect) | Average effect if *all* women in a target population (e.g. all urban women in the country) used contraception, vs. none | Everyone in the target population |
+
+A method's **estimand** is the quantity it is trying to estimate. The toy examples below compare the estimands of 2SLS and Prince BART.
+
+
+# How 2SLS works, in formulas
+
+For woman $i$, let $Z_i$ be the instrument (1 = lives in a program city), $W_i$ the treatment (1 = uses modern contraception), and $Y_i$ the outcome (1 = employed).
+
+**2SLS without controls** runs two regressions:
+
+$$
+\begin{aligned}
+\text{First stage:}\quad & W_i = \delta_0 + \delta_1 Z_i + \nu_i, \\
+\text{Second stage:}\quad & Y_i = \alpha + \beta\, \widehat{W}_i + \varepsilon_i,
+\end{aligned}
+$$
+
+where $\widehat{W}_i = \hat\delta_0 + \hat\delta_1 Z_i$ is the fitted value from the first stage. The 2SLS estimate of the effect is $\hat\beta$. With one binary instrument and no controls, $\hat\beta$ equals the **Wald ratio**:
+
+$$
+\hat\beta = \frac{\bar Y_{Z=1} - \bar Y_{Z=0}}{\bar W_{Z=1} - \bar W_{Z=0}}
+= \frac{\text{effect of the program on employment}}{\text{effect of the program on contraceptive use}}.
+$$
+
+**Controls** are baseline covariates $X_i$, measured before the instrument could have affected anything (e.g. education, age, prior employment). They are added to *both* stages:
+
+$$
+\begin{aligned}
+\text{First stage:}\quad & W_i = \delta_0 + \delta_1 Z_i + X_i'\eta + \nu_i, \\
+\text{Second stage:}\quad & Y_i = \alpha + \beta\, \widehat{W}_i + X_i'\gamma + \varepsilon_i,
+\end{aligned}
+$$
+
+with $\widehat{W}_i = \hat\delta_0 + \hat\delta_1 Z_i + X_i'\hat\eta$. Researchers add controls when the instrument is plausibly random only *among women with the same covariates*; for example, when program cities differ systematically from comparison cities. In the toy examples there is a single control, $X_i = 1$ if woman $i$ is more educated and $0$ otherwise. With only two groups, this one indicator already allows a separate intercept for each group, so the specification is as flexible as it can be (it is "saturated").
+
+In R, `ivreg::ivreg(Y ~ W + X | Z + X, data = ...)` fits these models and gives correct standard errors. The helper `tsls()` below runs the two stages by hand with `lm()` to make the mechanics visible. Its point estimate is the same, but the standard errors from the hand-run second stage would be wrong, so it returns only $\hat\beta$.
+
+# A toy population and toy examples
+
+## Toy population
+We build a population where we know every effect. There are two kinds of women, with equal shares:
+
+```{r}
+#| label: toy-population
+#| code-fold: false
+toy <- data.frame(
+  group      = c("Less educated", "More educated"),
+  share      = c(0.5, 0.5),   # share of the population
+  p_complier = c(0.10, 0.30), # share of compliers within group
+  p_always   = c(0.10, 0.10), # share of always-takers within group
+  effect     = c(0.50, 0.10), # effect of contraception on P(employed)
+  baseline   = c(0.30, 0.50)  # P(employed) without contraception
+)
+knitr::kable(toy, caption = "Toy population (known truth)")
+```
+
+The key features:
+
+- Contraception has a **large effect for less-educated women** (+50 percentage points) and a **small effect for more-educated women** (+10 points).
+- More-educated women are **more likely to be compliers** (30% vs. 10%).
+
+
+## Helper functions
+
+The following functions compute the true quantities of interest, simulate data from a toy population, and compute 2SLS estimates.
+
+```{r}
+#| label: helpers
+#| code-fold: show
+
+# --- True estimands -------------------------------------------------------
+
+#' True complier effect (LATE)
+#'
+#' @param d data frame describing a population, one row per group, with columns
+#'   share      : share of the population in the group (sums to 1)
+#'   p_complier : share of compliers within the group
+#'   effect     : effect of treatment on P(Y = 1) in the group
+#'   (other columns are ignored)
+#' @return a single number: the average effect among compliers,
+#'   sum(share * p_complier * effect) / sum(share * p_complier)
+late <- function(d) sum(d$share * d$p_complier * d$effect) / sum(d$share * d$p_complier)
+
+#' True average effect for everyone (ATE in the study population, or PATE
+#' when d describes a target population)
+#'
+#' @param d data frame with columns share and effect (as in late())
+#' @return a single number: sum(share * effect)
+ate <- function(d) sum(d$share * d$effect)
+
+#' What 2SLS with group controls converges to in large samples
+#'
+#' @param d data frame with columns share, p_complier, effect (as in late())
+#' @param e numeric vector, one value per row of d: the probability of being
+#'   assigned to the program, P(Z = 1 | group)
+#' @return a single number: the weighted average of group effects with weights
+#'   share * e * (1 - e) * p_complier, where e * (1 - e) = Var(Z | group)
+tsls_estimand <- function(d, e) {
+  w <- d$share * e * (1 - e) * d$p_complier
+  sum(w * d$effect) / sum(w)
+}
+
+# --- Simulate data ----------------------------------------------------------
+
+#' Simulate individual-level data from a toy population
+#'
+#' @param d data frame, one row per group, with columns
+#'   group      : group label
+#'   share      : share of the population in the group (sums to 1)
+#'   p_complier : share of compliers within the group
+#'   p_always   : share of always-takers within the group
+#'                (the remaining 1 - p_complier - p_always are never-takers)
+#'   effect     : effect of treatment on P(Y = 1) in the group
+#'   baseline   : P(Y = 1) without treatment in the group
+#'   (baseline + effect must lie in [0, 1])
+#' @param e numeric vector, one value per row of d: P(Z = 1 | group)
+#' @param n number of individuals to simulate
+#' @return data frame with n rows and columns
+#'   group   : group label
+#'   Z       : instrument (0/1)
+#'   W       : treatment (0/1)
+#'   Y       : observed outcome (0/1)
+#'   stratum : "complier", "always" or "never" (unobserved in real data)
+simulate_toy <- function(d, e, n) {
+  g <- sample(seq_len(nrow(d)), n, replace = TRUE, prob = d$share)
+  Z <- rbinom(n, 1, e[g])
+  u <- runif(n)
+  stratum <- ifelse(u < d$p_complier[g], "complier",
+             ifelse(u < d$p_complier[g] + d$p_always[g], "always", "never"))
+  W  <- ifelse(stratum == "always", 1, ifelse(stratum == "complier", Z, 0))
+  Y0 <- rbinom(n, 1, d$baseline[g])
+  Y1 <- rbinom(n, 1, d$baseline[g] + d$effect[g])
+  data.frame(group = d$group[g], Z = Z, W = W, Y = ifelse(W == 1, Y1, Y0),
+             stratum = stratum)
+}
+
+# --- 2SLS by hand -------------------------------------------------------------
+
+#' 2SLS point estimate, running the two stages with lm()
+#'
+#' @param dat data frame with columns Y, W, Z and group (e.g. from simulate_toy())
+#' @param controls logical; if TRUE, the group indicator is included as a control
+#'   in both stages, if FALSE no controls are used
+#' @return a single number: the 2SLS estimate of beta (no standard error;
+#'   use ivreg::ivreg() for inference)
+tsls <- function(dat, controls = TRUE) {
+  if (controls) {
+    dat$W_hat <- fitted(lm(W ~ Z + group, data = dat))
+    unname(coef(lm(Y ~ W_hat + group, data = dat))["W_hat"])
+  } else {
+    dat$W_hat <- fitted(lm(W ~ Z, data = dat))
+    unname(coef(lm(Y ~ W_hat, data = dat))["W_hat"])
+  }
+}
+```
+
+## Toy example 1: a fully randomized instrument
+
+Suppose the program is assigned by a coin flip, so every woman has a 50% chance of $Z = 1$ whatever her education. This is the textbook case.
+
+```{r}
+#| label: toy1
+set.seed(1)
+e1   <- c(0.5, 0.5)
+dat1 <- simulate_toy(toy, e1, n = 1e6)   # very large n: estimates ≈ estimands
+res1 <- data.frame(
+  quantity = c("True LATE (complier effect)",
+               "True ATE (everyone in the study population)",
+               "2SLS without controls (n = 1,000,000)",
+               "2SLS with education control (n = 1,000,000)"),
+  value = c(late(toy), ate(toy), tsls(dat1, FALSE), tsls(dat1, TRUE))
+)
+knitr::kable(res1, digits = 3)
+```
+
+**What we see.**
+
+- 2SLS works as advertised: with or without the control, it recovers the complier effect, LATE = `r round(late(toy), 2)`.
+- The complier effect is **not** the average effect in the population, ATE = `r round(ate(toy), 2)`. Compliers are mostly more-educated women, who benefit less. Nothing is wrong with 2SLS here; it simply answers a question about compliers.
+- 2SLS **hides the heterogeneity**. The single number `r round(late(toy), 2)` doesn't reveal that the effect is 0.50 for one group and 0.10 for the other.
+
+**What Prince BART targets in this example.**
+
+- The **effect for each group** (here 0.50 and 0.10). More generally, the effect as a flexible function of all covariates, $\text{CATE}_c(x)$.
+- The **share of compliers** in each group (10% and 30%).
+- The overall complier effect, built by averaging the group effects with complier weights. This equals the LATE.
+
+::: callout-tip
+## A note on "MATE~c~"
+
+In practice, Prince BART averages the group effects over the women *in your sample* rather than over the whole population. The paper calls this the mixed average treatment effect among compliers ($\text{MATE}_c$). In a sample where, by chance, 53% of women are less educated, $\text{MATE}_c$ uses 53% rather than the population's 50%. In large samples the two are essentially the same quantity.
+:::
+
+## Toy example 2: an instrument that is random only after controlling for covariates
+
+In real programs the instrument is rarely a coin flip. In the paper, program cities were chosen by implementers, so assignment is plausibly random only **after accounting for differences between women** (education, wealth, prior employment, and so on). This is the case where applied researchers add controls to 2SLS.
+
+In the toy population, suppose more-educated women are much more likely to live in program cities:
+
+```{r}
+#| label: toy2
+e2   <- c(0.5, 0.9)   # P(Z = 1): 50% for less educated, 90% for more educated
+dat2 <- simulate_toy(toy, e2, n = 1e6)
+res2 <- data.frame(
+  quantity = c("True LATE (complier effect)",
+               "2SLS without controls",
+               "2SLS with education control",
+               "What 2SLS with control converges to (formula)"),
+  value = c(late(toy), tsls(dat2, FALSE), tsls(dat2, TRUE), tsls_estimand(toy, e2))
+)
+knitr::kable(res2, digits = 3)
+```
+
+**What we see.**
+
+- **Without controls**, 2SLS is badly off (`r round(tsls(dat2, FALSE), 2)`). Program cities have more educated women, who are more often employed anyway. Every 2SLS user knows to add the control here.
+- **With the control**, 2SLS gives `r round(tsls(dat2, TRUE), 2)`. That is still not the complier effect of `r round(late(toy), 2)`. The instrument is valid and the model includes the right control, yet the estimate is about 50% too large.
+
+**Why?** With controls, 2SLS does not weight each group by how many compliers it has. It also weights by how *balanced* the instrument is within the group, that is, by the variance $e(1-e)$ of $Z$:
+
+```{r}
+#| label: toy2-weights
+#| fig-cap: "Weight each group gets in the complier effect (LATE) vs. in 2SLS with controls."
+w_late <- toy$share * toy$p_complier;               w_late <- w_late / sum(w_late)
+w_tsls <- toy$share * e2 * (1 - e2) * toy$p_complier; w_tsls <- w_tsls / sum(w_tsls)
+barplot(rbind(LATE = w_late, `2SLS with controls` = w_tsls),
+        beside = TRUE, names.arg = toy$group, ylim = c(0, 1),
+        legend.text = TRUE, args.legend = list(x = "topleft", bty = "n"),
+        ylab = "Weight", col = c("grey30", "grey75"))
+```
+
+Among the more-educated, 90% are assigned to the program. Within that group there is little contrast between assigned and non-assigned women, so 2SLS gives the group little weight, even though most compliers are in it. The less-educated group, with a balanced 50/50 split, gets more weight than its share of compliers. Because the two groups have different effects, the re-weighting changes the answer.
+
+The general lesson, from recent econometrics work (Blandhol et al. 2022; Słoczyński 2024): **when the instrument is random only conditionally on covariates and effects differ across people, 2SLS with controls is generally not the complier effect.** With many covariates entered linearly the weights can even become negative.
+
+**Prince BART** estimates the group-specific effects and the complier shares, and averages them with the complier weights. Its target is the complier effect, `r round(late(toy), 2)`, whatever the pattern of instrument assignment.
+
+## Toy example 3: few compliers and impossible answers
+
+The 2SLS estimate is a ratio: the effect of the program on employment, divided by the effect of the program on contraceptive use. When only a few percent of women are compliers, the denominator is small and noisy, and the ratio can explode.
+
+Here we take a single group with 5% compliers, a true effect of 0.30, and samples of 2,000 women, and repeat the study many times:
+
+```{r}
+#| label: toy3
+set.seed(3)
+toy3 <- data.frame(group = "All", share = 1, p_complier = 0.05,
+                   p_always = 0.10, effect = 0.30, baseline = 0.40)
+wald <- function(dat) {
+  (mean(dat$Y[dat$Z == 1]) - mean(dat$Y[dat$Z == 0])) /
+    (mean(dat$W[dat$Z == 1]) - mean(dat$W[dat$Z == 0]))
+}
+est3 <- replicate(2000, wald(simulate_toy(toy3, e = 0.5, n = 2000)))
+share_impossible <- mean(abs(est3) > 1)
+hist(pmax(pmin(est3, 3), -3), breaks = 60, main = "",
+     xlab = "2SLS estimate (truncated at ±3 for display)", col = "grey75", border = "white")
+abline(v = c(-1, 1), lty = 2); abline(v = 0.30, lwd = 2)
+```
+
+In `r round(100 * share_impossible)`% of the repeated studies, 2SLS reports an effect outside $[-1, 1]$. An effect of contraception on the *probability* of being employed cannot be larger than 100 percentage points. This happened in the paper's Senegal data, where 2SLS gave 2.39.
+
+Prince BART models the probabilities directly, so its estimates always lie on the probability scale. Because it uses a model for each part of the problem instead of a single ratio, it is also typically more stable when compliers are few (see the simulation study in the paper).
+
+## Toy example 4: from compliers to the population you care about
+
+Policy questions are usually about a broader population: all urban women in a country, not the compliers in six study cities. Suppose the target population is **80% less educated**:
+
+```{r}
+#| label: toy4
+target <- toy; target$share <- c(0.8, 0.2)
+res4 <- data.frame(
+  quantity = c("Complier effect in the study (LATE)",
+               "Effect in the target population (PATE)"),
+  value = c(late(toy), ate(target))
+)
+knitr::kable(res4, digits = 3)
+```
+
+- Reporting the study's complier effect (`r round(late(toy), 2)`) as "the effect" would **understate** the population effect (`r round(ate(target), 2)`) by more than half. The target population has many more women from the group that benefits most.
+- 2SLS gives no way to make this translation: it produces one number, not effects by type of woman.
+- Prince BART estimates the effect for each covariate profile. These can be averaged over the covariate distribution of any target population, here using survey data such as the DHS. This step assumes that, among women with the same covariates, compliers and non-compliers would benefit equally. The paper includes sensitivity analyses for this assumption.
+
+In the paper, this translation raised the estimated effect in Nigeria from 0.37 among compliers to about 0.50–0.53 in the target populations.
+
+# Summary table
+
+| Question | 2SLS | Prince BART |
+|------------------------|------------------------|------------------------|
+| Effect among compliers, instrument fully randomized | ✔ (Wald / 2SLS) | ✔ |
+| Effect among compliers, instrument random only given covariates | ✘ generally a differently weighted average | ✔ |
+| Estimates stay within the possible range | ✘ ratio can exceed ±1 | ✔ |
+| Who are the compliers? | Partly (average characteristics via extra steps) | ✔ complier probability for every person |
+| Does the effect differ across subgroups? | Only with pre-specified interactions, same weighting issues | ✔ effect as a function of all covariates, summarized by data-driven subgroups |
+| Effect in a different target population | ✘ | ✔ (under a transportability assumption, with sensitivity checks) |
+| Computation | seconds | minutes (10–30 min for the paper's application) |
+
+# More details on Prince BART 
+
+## Assumptions about the instrument
+
+Prince BART is not a substitute for a good instrument. Like 2SLS, it needs:
+
+- **Exclusion:** the instrument affects the outcome only through the treatment. In the example, living in a program city affects employment only through contraceptive use.
+- **Monotonicity:** nobody is pushed *away* from treatment by the instrument.
+- **Overlap:** within every covariate profile, some women are assigned to the program and some are not.
+
+## The "as good as random given covariates" assumption: needed by both, handled differently
+
+Both methods assume the instrument is **as good as random among women with the same measured covariates**. What they do with this assumption is different.
+
+- **2SLS with controls:** even when the assumption holds exactly, 2SLS with controls generally does **not** estimate the complier effect. Toy example 2 showed this: the instrument was valid given education, education was the control, and the model was saturated, yet 2SLS gave `r round(tsls_estimand(toy, e2), 2)` instead of `r round(late(toy), 2)`. Adding controls makes the comparison fair *within* groups, but the estimate then mixes the groups with weights that depend on how balanced the instrument is in each group, not on where the compliers are. 2SLS recovers the complier effect only in special cases: the effect is the same for everyone, or the chance of being assigned to the program is the same in every group (then no controls are needed). With many covariates entered linearly, there is the further risk that the linear controls don't capture how the covariates relate to the outcome.
+- **Prince BART:** this assumption is exactly what it needs to work as intended. It models, as flexible functions of the covariates, the probability of being assigned to the program, the probability of being a complier (or always- or never-taker), and employment within each group. It then averages the effects over compliers. When the assumption holds, it targets the complier effect itself, `r round(late(toy), 2)` in toy example 2, whatever the pattern of program assignment.
+
+In short: the assumption is necessary for both methods, but only for Prince BART is it also (together with exclusion, monotonicity and overlap) sufficient to target the complier effect when effects differ across people.
+
+## Additional assumptions to generalize to a target population
+
+Translating the complier effects to a target population (toy example 4) requires, on top of the assumptions above:
+
+- **No unmeasured differences in benefit (conditional transportability):** among women with the same measured covariates, compliers and other women in the target population would benefit equally from contraception. Put differently, the covariates capture all characteristics that both (i) make women more or less likely to be compliers and (ii) change how much they benefit.
+- **Covered profiles (support):** every combination of covariates found in the target population is also found among compliers in the study. Prince BART cannot learn the effect for types of women who are never compliers in the study.
+- **Comparable covariate data:** the covariate distribution of the target population is known (e.g. from a survey such as the DHS) and measured the same way as in the study. Covariates that the survey does not measure are imputed.
+
+The paper provides sensitivity analyses for each of these assumptions, as well as for unmeasured city-level confounding of the instrument.
+
+## Modeling and computation
+
+- Prince BART uses BART, a flexible tree-based model, but it still relies on modeling choices such as default priors and a probit link with normal latent errors.
+- TO BE CONFIRMED RE RUN TIME -- It takes minutes rather than seconds to run (10–30 minutes per country in the paper).
+
+## What Prince BART reports: toy example 2
+
+For toy example 2, the table below lists the quantities Prince BART targets, with their **true** values. A fit to data (see the next section) returns a posterior mean and credible interval for each. "By group" columns correspond to subgroup estimates. In real data with many covariates, the subgroups are found by summarizing the fitted effects with a small tree; here they are simply the two education groups.
+
+```{r}
+#| label: princebart-measures
+options(knitr.kable.NA = "")
+d <- toy; e <- e2
+wavg  <- function(v, w) sum(w * v) / sum(w)       # weighted average over groups
+p_n   <- 1 - d$p_complier - d$p_always            # never-taker share by group
+w_c   <- d$share * d$p_complier                   # complier mass by group
+w_a   <- d$share * d$p_always                     # always-taker mass by group
+w_n   <- d$share * p_n                            # never-taker mass by group
+w_cz1 <- d$share * e * d$p_complier               # compliers in program cities
+target_share <- c(0.8, 0.2)                       # target population of toy example 4
+
+by_group <- function(i) c(d$p_complier[i], d$p_always[i], p_n[i],
+                          d$baseline[i], d$baseline[i] + d$effect[i],
+                          d$effect[i], d$effect[i],
+                          d$baseline[i], d$baseline[i] + d$effect[i], NA)
+pb <- data.frame(
+  measure = c("Share of compliers",
+              "Share of always-takers",
+              "Share of never-takers",
+              "Compliers: P(employed) without contraception, E[Y(0) | complier]",
+              "Compliers: P(employed) with contraception, E[Y(1) | complier]",
+              "Complier effect: MATE_c (overall) / MCATE_c (by group)",
+              "Complier effect among women in program cities, MATT_c",
+              "Never-takers: P(employed), E[Y(0) | never-taker]",
+              "Always-takers: P(employed), E[Y(1) | always-taker]",
+              "Effect in target population (80% less educated), PATE"),
+  overall = c(sum(w_c), sum(w_a), sum(w_n),
+              wavg(d$baseline, w_c), wavg(d$baseline + d$effect, w_c),
+              wavg(d$effect, w_c), wavg(d$effect, w_cz1),
+              wavg(d$baseline, w_n), wavg(d$baseline + d$effect, w_a),
+              sum(target_share * d$effect)),
+  less_educated = by_group(1),
+   more_educated = by_group(2)
+  # two_sls = c("first stage (overall only)", "first stage (overall only)",
+  #             "first stage (overall only)",
+  #             "extra regressions (overall only)", "extra regressions (overall only)",
+  #             sprintf("2SLS with control gives %.2f: a different quantity", tsls_estimand(d, e)),
+  #             "", "", "", "not available")
+)
+knitr::kable(pb, digits = 2,
+             col.names = c("Measure", "Overall", "Less educated", "More educated"))#, "2SLS counterpart"))
+```
+
+Notes on the table:
+
+- The **complier shares** show *who* responds to the program: three times as many compliers among more-educated women.
+- The **complier potential-outcome means** show the employment level of compliers with and without contraception, not only the difference.
+- **MATT~c~** (the complier effect among women in program cities) is lower than MATE~c~ in this example. Program cities have relatively more more-educated compliers, who benefit less. Which average is relevant depends on the question.
+- The package also reports **SATE~c~**, the average effect over the women in the sample who are (estimated to be) compliers. In large samples it is close to MATE~c~.
+
+## Trying it on the toy data
+
+NOT YET DONE 
+
+The code below fits Prince BART to the toy data from example 2. It is not run when rendering this document.
+
+```{r}
+#| label: fit-princebart
+#| eval: false
+library(princeBART)
+dat2$more_educated <- as.numeric(dat2$group == "More educated")
+small <- dat2[sample(nrow(dat2), 5000), ]   # a realistic sample size
+fit <- prince_BART(Y ~ more_educated | Z | W, data = small,
+                   n_chains = 4, n_warmup = 1000, n_samples = 1000)
+summary(fit)                              # complier shares and MATE_c
+# compare with: late(toy) and tsls(small, controls = TRUE)
+```
+
+# References
+
+- Angrist, J. D., Imbens, G. W., & Rubin, D. B. (1996). Identification of causal effects using instrumental variables. *JASA*, 91, 444–455.
+- Blandhol, C., Bonney, J., Mogstad, M., & Torgovitsky, A. (2022). When is TSLS actually LATE? NBER WP 29709.
+- Godoy Garraza, L., Speizer, I. S., & Alkema, L. (2026). Combining BART and principal stratification to estimate the effect of intermediate variables on primary outcomes. *Statistics and Public Policy*, 13:1.
+- Słoczyński, T. (2024). When should we (not) interpret linear IV estimands as LATE? arXiv:2011.06695.
