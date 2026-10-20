@@ -96,7 +96,7 @@ Let's create a simulated dataset using the build-in simulation function:
 
 ```{r}
 n <- 800
-simdata = ps_simulate_data(n)
+simdata = ps_sim_data(n = n)
 ```
 
 The following describes how the data was generated: Here the defaults
@@ -122,17 +122,17 @@ each coefficient is drawn once from $N(0,1)$ for this dataset. The
 unobserved $U$ affects strata and outcomes, while assignment $Z$ depends
 only on the observed covariates.
 
-The ps_simulate_data(n) is flexible to generate more complex data. You
+The ps_sim_data(n = n) is flexible to generate more complex data. You
 can find additional information at [Link to Simulation](Simulation.qmd)
 
-The resulting `simdata` has four components: The `data` component is the
+The resulting `simdata` has three components: The `data` component is the
 observed data:
 
 ```{r}
 head(simdata$data, 5)
 ```
 
-The other three components retain information that is known in a
+The other two components retain information that is known in a
 simulation:
 
 - `alldata` contains the observed data, the true stratum `G`, unobserved
@@ -140,19 +140,17 @@ simulation:
   `propensity`, and conditional outcome means `mean_y0` and `mean_y1`.
   These means correspond to assignment $Z=0$ and $Z=1$; for binary
   compliers they also correspond to received treatment $W=0$ and $W=1$.
-- `weights` contains the coefficients actually used to generate the
-  data. Reusing it allows new datasets to be generated under the same
-  model.
-- `stratum_weights` is a matrix whose rows index `W0` and columns index
-  `W1`. Zero entries exclude strata; positive entries set relative
-  weights before normalization, rather than marginal stratum
-  probabilities.
+- `setup` contains all simulation settings and the fixed `coefficients`.
+  Reuse it with `ps_sim_data(setup = simdata$setup)` to preserve the model;
+  change its `seed` for a new dataset. Its `stratum_weights` matrix has
+  rows indexing `W0` and columns indexing `W1`. Zero entries exclude strata;
+  positive entries set relative weights before normalization.
 
 ```{r simulation-truth-output}
 head(simdata$alldata[c("G", "U", "W0", "W1", "propensity",
                       "mean_y0", "mean_y1")], 5)
-names(simdata$weights)
-simdata$stratum_weights
+names(simdata$setup$coefficients)
+simdata$setup$stratum_weights
 ```
 
 ## Basic Usage
@@ -239,7 +237,7 @@ knitr::kable(comparison, digits = 3)
 ## Effect Heterogeneity by Segments (mostly unchanged, but we may need some non-linearity?)
 
 ```{r, cache=TRUE}
-simdata = ps_simulate_data(n, x1_transform = "relu")
+simdata = ps_sim_data(n = n, x1_transform = function(x) max(0, x))
 fit <- prince_BART(
   Y ~ x1_1 + x2_1 | Z | W,
   data = simdata$data,
@@ -291,7 +289,7 @@ in the ps_simulate_data.R, generate a new function ps_simulate_target(),
 which takes the simdata object and return another simdata object, that
 is generated with the same weight, but different dstribution of x1 and
 x2. the parameter should be the following: source: a named list returned
-by ps_simulate_data() ?
+by ps_sim_data() ?
 
 ## Count-valued Z
 

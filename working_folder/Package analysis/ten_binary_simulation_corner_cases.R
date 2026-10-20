@@ -91,31 +91,31 @@ run_tests <- function() {
     })
 
     testthat::test_that("7. observed uptake follows assigned potential uptake", {
-      sim <- princeBART::ps_simulate_data(n = 20, seed = 1)
+      sim <- princeBART::ps_sim_data(n = 20, seed = 1)
       testthat::expect_equal(sim$data$W,
         with(sim$alldata, (1 - Z) * W0 + Z * W1))
     })
 
     testthat::test_that("8. one unit and no covariates retain data dimensions", {
-      sim <- princeBART::ps_simulate_data(n = 1, nx1 = 0, nx2 = 0, seed = 1)
+      sim <- princeBART::ps_sim_data(n = 1, nx1 = 0, nx2 = 0, seed = 1)
       testthat::expect_equal(dim(sim$data), c(1L, 3L))
     })
 
     testthat::test_that("9. custom binary stratum weights set relative mass", {
       support <- matrix(c(1, 2, 3, 4), 2, 2)
-      sim <- princeBART::ps_simulate_data(n = 10000, weights = 0,
+      sim <- princeBART::ps_sim_data(n = 10000, coefficients = 0,
         stratum_weights = support, seed = 3)
       testthat::expect_equal(as.numeric(table(sim$alldata$G)) / 10000,
         c(0.1, 0.2, 0.3, 0.4), tolerance = 0.02)
     })
 
     testthat::test_that("10. binary potential-outcome mean follows model coefficients", {
-      weights <- princeBART::ps_simulate_weights(weights = 0)
+      weights <- princeBART::ps_sim_setup(coefficients = 0)$coefficients
       weights$y_intercept[1, 2] <- -0.5
       weights$y_w[1, 2] <- 0.8
       support <- matrix(0, 2, 2)
       support[1, 2] <- 1
-      sim <- princeBART::ps_simulate_data(weights = weights,
+      sim <- princeBART::ps_sim_data(coefficients = weights,
         stratum_weights = support, seed = 5)
       testthat::expect_equal(sim$alldata$mean_y1,
         rep(stats::plogis(-0.5 + 0.8), nrow(sim$data)))
