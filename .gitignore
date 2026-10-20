@@ -11,5 +11,6 @@ analyses/misc.rmd
 .Rhistory
 .DS_Store
 *_files/
+*_cache/
 *.html
 /working_folder/reproduce studies/private
