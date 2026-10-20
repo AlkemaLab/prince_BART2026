@@ -12,5 +12,5 @@ analyses/misc.rmd
 .DS_Store
 *_files/
 *_cache/
-*.html
+*guidelines.qmd
 /working_folder/reproduce studies/private
