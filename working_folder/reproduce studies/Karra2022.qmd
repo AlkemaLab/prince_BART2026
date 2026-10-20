@@ -1,5 +1,133 @@
 ---
-title: "Karra2022"
+title: "Reproducing Karra et al. (2022)"
+author: "Zekai"
+date: last-modified
 format: html
+execute:
+  eval: true
+  echo: true
+  message: false
 ---
 
+# Study overview
+
+[Karra et al. (2022)](https://pmc.ncbi.nlm.nih.gov/articles/PMC9295775/) randomized 2,143 women in Malawi to improved family planning access or control. The package provided counseling, transport, contraceptive services, and side-effect care. Adjusted intention-to-treat (ITT) analyses found a 5.9 percentage point increase in contraceptive use and a 3.7 percentage point reduction in subsequent pregnancy. Here, assignment instruments endline contraceptive use. Principal stratification targets the pregnancy effect among women whose use responds to assignment. This is an exploratory extension, since endline use may follow pregnancy and may not capture all pathways through which the package affects fertility.
+
+# Dataset preparation
+
+Paths are relative to this QMD. Evaluation is disabled; enable it when ready.
+
+```{r prepare-data}
+library(haven)
+library(dplyr)
+library(ivreg)
+library(sandwich)
+library(princeBART)
+library(future)
+
+dat <- read_dta("private/karra2022/dataverse_files/MFPS_PNAS_MAIN_ITT_DATA.dta") |>
+  filter(year == 2018, termflag == 0) |>
+  transmute(
+    Y = as.numeric(next_preg_2018),
+    W = as.numeric(curr_use_inj_adj),
+    Z = as.numeric(treatment),
+    exposure = as.numeric(exposure),
+    across(c(curr_use_inj_adj_bl, preg_bl, area_bl, age_group_bl, sex_age_bl,
+             total_alive_bl, ever_use_bl, edu_primary_bl, work_bl,
+             religion_r_bl, ethnicity_r_bl), as.numeric)
+  ) |>
+  mutate(area_bl = factor(area_bl), age_group_bl = factor(age_group_bl)) |>
+  droplevels()
+```
+
+```{r preview-data}
+head(dat, 5)
+```
+
+- **Outcome (Y):** pregnancy since the index birth by the 2018 interview.
+- **Treatment (W):** endline contraceptive use, using the authors' injectable-adjusted indicator.
+- **Instrument (Z):** randomized assignment to the family planning package.
+- **Covariates:** baseline contraceptive use, pregnancy status, neighborhood, age group, age at sexual debut, living children, ever use of family planning, education, work status, religion, and ethnicity.
+
+# Objective 1: Pregnancy among contraceptive-use compliers
+
+First reproduce the authors' adjusted pregnancy ITT model using its available cases. Then restrict `dat` to the common complete cases for 2SLS and princeBART.
+
+## Reproduce result
+
+Follow `DO_3_MAIN_RESULTS.do`: adjust for baseline pregnancy and covariates, plus months since the index birth (`exposure`). Report an HC1 robust 95% CI.
+
+```{r reproduce-itt}
+fit_itt <- lm(
+  Y ~ Z + exposure + preg_bl + area_bl + age_group_bl + sex_age_bl +
+    total_alive_bl + ever_use_bl + edu_primary_bl + work_bl + religion_r_bl + ethnicity_r_bl,
+  data = dat, na.action = na.omit
+)
+itt_estimate <- unname(coef(fit_itt)["Z"])
+itt_se <- sqrt(vcovHC(fit_itt, type = "HC1")["Z", "Z"])
+itt_result <- c(itt_estimate,
+                itt_estimate + qt(c(0.025, 0.975), df.residual(fit_itt)) * itt_se)
+```
+
+## 2SLS analysis
+
+Estimate the use coefficient with an HC1 robust, normal-approximation 95% CI.
+
+```{r two-stage-least-squares}
+# Exposure is used only in the ITT replication; the IV models use baseline X.
+dat <- dat |>
+  select(-exposure) |>
+  filter(if_all(everything(), ~ !is.na(.x))) |>
+  droplevels()
+
+fit_iv <- ivreg(
+  Y ~ W + curr_use_inj_adj_bl + preg_bl + area_bl + age_group_bl + sex_age_bl +
+    total_alive_bl + ever_use_bl + edu_primary_bl + work_bl + religion_r_bl + ethnicity_r_bl |
+    Z + curr_use_inj_adj_bl + preg_bl + area_bl + age_group_bl + sex_age_bl +
+    total_alive_bl + ever_use_bl + edu_primary_bl + work_bl + religion_r_bl + ethnicity_r_bl,
+  data = dat
+)
+iv_estimate <- unname(coef(fit_iv)["W"])
+iv_se <- sqrt(vcovHC(fit_iv, type = "HC1")["W", "W"])
+iv_result <- c(iv_estimate, iv_estimate + qnorm(c(0.025, 0.975)) * iv_se)
+```
+
+## princeBART approach
+
+Report the mixed complier effect: posterior mean and 95% equal-tail credible interval.
+
+```{r princebart}
+plan(multisession, workers = 4)
+set.seed(123)
+fit_ps <- prince_BART(
+  Y ~ curr_use_inj_adj_bl + preg_bl + area_bl + age_group_bl + sex_age_bl +
+    total_alive_bl + ever_use_bl + edu_primary_bl + work_bl + religion_r_bl + ethnicity_r_bl |
+    Z | W,
+  data = dat, uptake_type = "binary",
+  n_chains = 4, n_warmup = 1000, n_samples = 2000,
+  workers = 4, keep_trees = FALSE
+)
+
+tau <- unlist(lapply(fit_ps$chains, function(chain) {
+  p_c <- 1 - chain$p_a - chain$p_n
+  rowSums(p_c * (chain$m_y1c - chain$m_y0c)) / rowSums(p_c)
+}), use.names = FALSE)
+bart_result <- c(mean(tau), quantile(tau, c(0.025, 0.975), names = FALSE))
+```
+
+## Comparison
+
+The published estimate is the adjusted pregnancy ITT in Table 2, Panel E. All effects are probability differences; the first two rows estimate assignment effects, whereas the IV methods target contraceptive-use complier effects.
+
+```{r comparison}
+tibble(
+  Method = c("Published ITT", "Reproduced ITT", "2SLS complier effect",
+             "princeBART mixed complier effect"),
+  Estimate = c(-0.037, itt_result[1], iv_result[1], bart_result[1]),
+  Lower = c(-0.0621, itt_result[2], iv_result[2], bart_result[2]),
+  Upper = c(-0.0111, itt_result[3], iv_result[3], bart_result[3]),
+  Interval = c("95% CI", "95% CI", "95% CI", "95% CrI")
+)
+```
+
+The published ITT concerns assignment, whereas the new estimates concern use among compliers; their samples and estimands differ, so agreement does not establish performance. Endline use may follow pregnancy, exclusion and monotonicity require additional assumptions, and weak identification or selection into complete follow-up can affect both methods. The pregnancy indicator also has varying follow-up duration rather than a fixed 24-month window.

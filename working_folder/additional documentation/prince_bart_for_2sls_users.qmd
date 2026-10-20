@@ -12,7 +12,6 @@ execute:
   message: false
 ---
 
-
 # Summary
 
 If you use two-stage least squares (2SLS) with a binary instrument, you are estimating an effect **for compliers**: the people whose treatment status is changed by the instrument. That is a good target, and Prince BART aims at the same one. The difference is in what happens once the setting gets realistic:
@@ -36,7 +35,7 @@ We want the effect of contraceptive use on employment. Women choose whether to u
 Women fall into three groups, depending on how they respond to the program:
 
 | Group | Uses contraception without the program? | With the program? | What we can learn about their effect |
-|------------------|------------------|------------------|------------------|
+|----|----|----|----|
 | **Always-takers** | yes | yes | nothing: the program doesn't change their behavior |
 | **Never-takers** | no | no | nothing, for the same reason |
 | **Compliers** | no | yes | **this is where the instrument tells us something** |
@@ -44,13 +43,12 @@ Women fall into three groups, depending on how they respond to the program:
 Any instrumental-variables method can only learn the effect **for compliers** directly. That effect has a name, the **local average treatment effect (LATE)**. Three different "effects" come up in this document:
 
 | Quantity | In words | Who it is about |
-|------------------------|------------------------|------------------------|
+|----|----|----|
 | **LATE** (complier effect) | Average effect among women who start contraception *because of* the program | Compliers in the study population |
 | **Subgroup complier effects** | The same, separately for groups of women (e.g. by education) | Compliers within a subgroup |
 | **PATE** (population effect) | Average effect if *all* women in a target population (e.g. all urban women in the country) used contraception, vs. none | Everyone in the target population |
 
 A method's **estimand** is the quantity it is trying to estimate. The toy examples below compare the estimands of 2SLS and Prince BART.
-
 
 # How 2SLS works, in formulas
 
@@ -88,6 +86,7 @@ In R, `ivreg::ivreg(Y ~ W + X | Z + X, data = ...)` fits these models and gives 
 # A toy population and toy examples
 
 ## Toy population
+
 We build a population where we know every effect. There are two kinds of women, with equal shares:
 
 ```{r}
@@ -108,7 +107,6 @@ The key features:
 
 - Contraception has a **large effect for less-educated women** (+50 percentage points) and a **small effect for more-educated women** (+10 points).
 - More-educated women are **more likely to be compliers** (30% vs. 10%).
-
 
 ## Helper functions
 
@@ -335,7 +333,7 @@ In the paper, this translation raised the estimated effect in Nigeria from 0.37 
 # Summary table
 
 | Question | 2SLS | Prince BART |
-|------------------------|------------------------|------------------------|
+|----|----|----|
 | Effect among compliers, instrument fully randomized | ✔ (Wald / 2SLS) | ✔ |
 | Effect among compliers, instrument random only given covariates | ✘ generally a differently weighted average | ✔ |
 | Estimates stay within the possible range | ✘ ratio can exceed ±1 | ✔ |
@@ -344,7 +342,7 @@ In the paper, this translation raised the estimated effect in Nigeria from 0.37 
 | Effect in a different target population | ✘ | ✔ (under a transportability assumption, with sensitivity checks) |
 | Computation | seconds | minutes (10–30 min for the paper's application) |
 
-# More details on Prince BART 
+# More details on Prince BART
 
 ## Assumptions about the instrument
 
@@ -435,7 +433,7 @@ Notes on the table:
 
 ## Trying it on the toy data
 
-NOT YET DONE 
+NOT YET DONE
 
 The code below fits Prince BART to the toy data from example 2. It is not run when rendering this document.
 
