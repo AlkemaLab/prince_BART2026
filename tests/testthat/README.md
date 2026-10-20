@@ -12,7 +12,7 @@ includes these tests during package checks.
 
 There are seven test blocks:
 
-1. A two-chain fit: array dimensions, probability bounds, and principal-stratum
+1. A two-chain fit: per-chain matrix dimensions, probability bounds, and principal-stratum
    memberships constrained by the observed binary instrument and uptake.
 2. A one-chain fit: the mixed effect retains its chain dimension and equals the
    complier-probability-weighted contrast for each draw.
@@ -33,10 +33,10 @@ These are execution and arithmetic checks, not tests of MCMC convergence,
 credible-interval coverage, or effect recovery. No external dataset is needed.
 They exercise binary uptake only.
 
-The tests assert desired behavior and can fail on existing bugs. Source
-inspection suggests failures in the one-chain reduction, missing-value
-validation, perfect-compliance initialization, and boundary Bayes calculation.
+The tests assert desired behavior and can fail on existing bugs. The
+missing-value validation, perfect-compliance initialization, and boundary
+Bayes checks currently fail independently of the chain-storage refactor.
 Do not invert these assertions or skip the cases merely to obtain a green run.
 
-The test suite was added without executing it. No model implementation was
-changed as part of this addition.
+The separate `test-chain-storage.R` file checks the new matrix contract,
+ordinal summaries, ordinal fitting, and per-chain tree tables.

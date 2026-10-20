@@ -151,7 +151,7 @@ plan(multisession, workers = 4)
 
 fit <- prince_BART(
   Y ~ x1_1 + x2_1 | Z | W,
-  data = ps_simulate_data(seed = 1)$data,
+  data = ps_sim_data(seed = 1)$data,
   uptake_type = "auto",
   n_chains = 4,
   n_warmup = 1000,

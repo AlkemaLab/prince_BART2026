@@ -12,4 +12,4 @@ analyses/misc.rmd
 .DS_Store
 *_files/
 *.html
-
+/working_folder/reproduce studies/private
