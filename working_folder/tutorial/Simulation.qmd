@@ -1,5 +1,34 @@
 ---
-title: "simulation"
-format: html
+title: "Detailed introduction to the simulation function"
+author: "princeBART authors"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to princeBART}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor: 
+  markdown: 
+    wrap: 72
 ---
+
+# Overall simulation setup
+
+![](images/clipboard-4059235429.png){width="215"}
+
+
+# re-use regression coefficients for another simulation
+AI todo: for each of the scenarios, generate code to represent it, and display the top 5 rows of the data using head() do not use kable.
+
+# change the distribution of baseline covariates
+
+# simulate data with defiers
+
+# simulate count treatment
+
+# simulate continuous outcome
+
+
+
+
 

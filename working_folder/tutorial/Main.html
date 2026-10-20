@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="princeBART authors">
-<meta name="dcterms.date" content="2026-10-13">
+<meta name="dcterms.date" content="2026-10-20">
 
 <title>Introduction to princeBART</title>
 <style>
@@ -110,10 +110,24 @@ window.Quarto = {
 
 </head>
 
-<body class="fullcontent quarto-light">
+<body class="quarto-light">
 
 <div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#setup-and-assumptions" id="toc-setup-and-assumptions" class="nav-link" data-scroll-target="#setup-and-assumptions">Setup and assumptions</a></li>
+  <li><a href="#simulated-example-data" id="toc-simulated-example-data" class="nav-link" data-scroll-target="#simulated-example-data">Simulated example data</a></li>
+  <li><a href="#basic-usage-and-comparison-with-2sls" id="toc-basic-usage-and-comparison-with-2sls" class="nav-link" data-scroll-target="#basic-usage-and-comparison-with-2sls">Basic usage and comparison with 2SLS</a></li>
+  <li><a href="#segment-heterogeneity" id="toc-segment-heterogeneity" class="nav-link" data-scroll-target="#segment-heterogeneity">Segment heterogeneity</a></li>
+  <li><a href="#generalizing-to-a-target-population" id="toc-generalizing-to-a-target-population" class="nav-link" data-scroll-target="#generalizing-to-a-target-population">Generalizing to a target population</a></li>
+  <li><a href="#count-and-ordinal-uptake" id="toc-count-and-ordinal-uptake" class="nav-link" data-scroll-target="#count-and-ordinal-uptake">Count and ordinal uptake</a></li>
+  </ul>
+</nav>
+</div>
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
@@ -135,7 +149,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 13, 2026</p>
+      <p class="date">October 20, 2026</p>
     </div>
   </div>
   
@@ -149,31 +163,18 @@ window.Quarto = {
 
 <section id="overview" class="level2">
 <h2 class="anchored" data-anchor-id="overview">Overview</h2>
-<p>princeBART implements <strong>Principal Stratification with Bayesian Additive Regression Trees (BART)</strong> for causal inference. It estimates treatment effects for compliers—units whose treatment status is affected by an instrument.</p>
-<p>If you are unfamiliar with principle stratification or BART, you may refer to <a href="other-background.qmd">Link to background</a> for reference.</p>
-<p>While the canonical application is noncompliance in randomized experiments, the framework applies broadly to any setting with:</p>
-<ul>
-<li>An <strong>instrument Z</strong> that affects treatment uptake but has no direct effect on outcomes</li>
-<li>An <strong>endogenous treatment W</strong> whose causal effect on Y is of interest</li>
-<li><strong>Covariates X</strong> that may confound the Z-W or W-Y relationships</li>
-</ul>
+<p>princeBART implements <strong>principal stratification with Bayesian Additive Regression Trees (BART)</strong>. It estimates treatment effects for compliers: units whose treatment uptake changes in response to an instrument. See the <a href="background.qmd">background</a> for an introduction to principal stratification and BART.</p>
+<p>The framework uses an instrument <strong>Z</strong>, received treatment <strong>W</strong>, outcome <strong>Y</strong>, and covariates <strong>X</strong>. The instrument may be randomized assignment or an encouragement to take treatment. Covariates can affect assignment, uptake, and outcomes; unobserved variables <strong>U</strong> may affect uptake and outcomes.</p>
 </section>
-<section id="the-setup" class="level2">
-<h2 class="anchored" data-anchor-id="the-setup">The Setup</h2>
-<p>We observe:</p>
-<ul>
-<li><strong>Z</strong>: Binary instrument (e.g., randomized assignment, geographic variation, policy change)</li>
-<li><strong>W</strong>: Binary or endogenous treatment/exposure of interest (Later generalized to count-valued Z)</li>
-<li><strong>Y</strong>: Binary outcome</li>
-<li><strong>X</strong>: Covariates</li>
-</ul>
-<p>And the population consists of four principal strata <span class="math inline">\(G\)</span> that we don’t fully observe:</p>
+<section id="setup-and-assumptions" class="level2">
+<h2 class="anchored" data-anchor-id="setup-and-assumptions">Setup and assumptions</h2>
+<p>The binary model has three principal strata under monotonicity:</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
 <th>Stratum</th>
-<th>W if Z=0</th>
-<th>W if Z=1</th>
+<th>W(0)</th>
+<th>W(1)</th>
 </tr>
 </thead>
 <tbody>
@@ -192,256 +193,331 @@ window.Quarto = {
 <td>1</td>
 <td>1</td>
 </tr>
-<tr class="even">
-<td>Defiers</td>
-<td>1</td>
-<td>0</td>
-</tr>
 </tbody>
 </table>
-<p>We also denote unobserved confounders as <span class="math inline">\(U\)</span>.</p>
-<section id="key-assumptions" class="level3">
-<h3 class="anchored" data-anchor-id="key-assumptions">Key Assumptions</h3>
+<p>Here W(z) is uptake under assignment z. Defiers, with W(0) = 1 and W(1) = 0, are excluded. The current fitter requires a binary outcome; uptake can be binary or count/ordinal.</p>
+<p>The identifying assumptions are:</p>
 <ol type="1">
-<li><strong>Conditional randomization</strong>: <span class="math inline">\(Z \perp\!\!\!\perp (Y(z,w), W(z)) | X\)</span> — the instrument is as-good-as-random given covariates</li>
-<li><strong>Exclusion restriction</strong>: Z affects Y only through W</li>
-<li><strong>Monotonicity</strong>: No defiers (units for whom Z decreases W)</li>
+<li><strong>Conditional randomization:</strong> assignment is independent of potential outcomes and uptake given X.</li>
+<li><strong>Exclusion:</strong> Z affects Y only through received treatment W.</li>
+<li><strong>Monotonicity:</strong> W(1) &gt;= W(0) in the binary model.</li>
+<li><strong>Overlap and relevance:</strong> both assignment arms are possible given X, and assignment changes uptake for some units.</li>
 </ol>
-<p>The key estimand is the <strong>Complier Average Causal Effect (CACE)</strong>, also known as the Local Average Treatment Effect (LATE)—the causal effect of W on Y for units whose treatment is affected by the instrument. Writing <span class="math inline">\(Y(w)\)</span> for the potential outcome under received treatment <span class="math inline">\(w\)</span>, the conditional effect is</p>
+<p>Writing Y(w) for the potential outcome under received treatment w, the conditional complier effect is</p>
 <p><span class="math display">\[
-\mathrm{CATE}_C
-= E\!\left[Y(1)-Y(0)\mid G = Compliers\right].
+\mathrm{CATE}_C(x)
+= E[Y(1)-Y(0)\mid W(0)=0,\ W(1)=1,\ X=x].
 \]</span></p>
-<p>For a binary outcome, this is the difference in outcome probabilities under treatment and no treatment among compliers.</p>
-</section>
+<p>For binary outcomes, this is a difference in outcome probabilities. Averaging it over the covariate distribution of compliers gives the complier average causal effect (CACE), also called the local average treatment effect (LATE).</p>
 </section>
 <section id="simulated-example-data" class="level2">
-<h2 class="anchored" data-anchor-id="simulated-example-data">Simulated Example Data</h2>
-<p>Let’s create a simulated dataset using the build-in simulation function:</p>
+<h2 class="anchored" data-anchor-id="simulated-example-data">Simulated example data</h2>
+<p>The built-in simulator separates a reusable setup from data generation. Random coefficients use the caller’s RNG; the setup’s seed controls the data.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">800</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>simdata <span class="ot">=</span> <span class="fu">ps_simulate_data</span>(n)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>simdata <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(<span class="at">n =</span> <span class="dv">800</span>, <span class="at">seed =</span> <span class="dv">11</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(simdata<span class="sc">$</span>data, <span class="dv">5</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;          x1_1 x2_1 Z W Y</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 -0.59103110    1 0 1 1</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  0.02659437    1 1 1 1</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 -1.51655310    1 1 1 0</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4 -1.36265335    0 0 1 1</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5  1.17848916    0 1 1 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The following describes how the data was generated: Here the defaults give one continuous covariate <span class="math inline">\(X_1\sim N(0,1)\)</span>, one binary covariate <span class="math inline">\(X_2\sim\mathrm{Bernoulli}(0.5)\)</span>, and an unobserved variable <span class="math inline">\(U\sim N(0,1)\)</span>, drawn independently. The generator follows four steps:</p>
+<p>By default, <span class="math inline">\(X_1\)</span> and <span class="math inline">\(U\)</span> are independent <span class="math inline">\(N(0,1)\)</span> variables, and <span class="math inline">\(X_2\)</span> is an independent Bernoulli(0.5) variable. Let <span class="math inline">\(\widetilde X = (1, X_1, X_2)\)</span> and <span class="math inline">\(\operatorname{expit}(t) = 1/(1+\exp(-t))\)</span>. The generator uses</p>
 <p><span class="math display">\[
 \begin{aligned}
 P(G=g\mid X,U)
-&amp;=\frac{\exp(\widetilde X^\top\alpha_g+\gamma_g U)}
-{\sum_{h\in\mathcal G}\exp(\widetilde X^\top\alpha_h+\gamma_h U)},
-\quad \mathcal G=\{(0,0),(0,1),(1,1)\},\\
-Z\mid X &amp;\sim\mathrm{Bernoulli}\!\left(\operatorname{expit}(\widetilde X^\top\beta)\right),\\
+&amp;\propto \exp(\widetilde X^\top\alpha_g+\gamma_g U),
+\quad g\in\{(0,0),(0,1),(1,1)\},\\
+Z\mid X &amp;\sim \mathrm{Bernoulli}\{\operatorname{expit}(\widetilde X^\top\beta)\},\\
 W &amp;=(1-Z)W(0)+ZW(1),\\
-Y\mid X,U,G,W &amp;\sim\mathrm{Bernoulli}\!\left(
-\operatorname{expit}(\widetilde X^\top\theta_G+\delta_G U+\tau_G W)\right).
+Y\mid X,U,G,W &amp;\sim \mathrm{Bernoulli}\{
+\operatorname{expit}(\widetilde X^\top\theta_G+\delta_G U+\tau_G W)\}.
 \end{aligned}
 \]</span></p>
-<p>The pair <span class="math inline">\(G=(W(0),W(1))\)</span> identifies the principal stratum. By default, each coefficient is drawn once from <span class="math inline">\(N(0,1)\)</span> for this dataset. The unobserved <span class="math inline">\(U\)</span> affects strata and outcomes, while assignment <span class="math inline">\(Z\)</span> depends only on the observed covariates.</p>
-<p>The ps_simulate_data(n) is flexible to generate more complex data. You can find additional information at <a href="Simulation.qmd">Link to Simulation</a></p>
-<p>The resulting <code>simdata</code> has four components: The <code>data</code> component is the observed data:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(simdata<span class="sc">$</span>data, <span class="dv">5</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;         x1_1 x2_1 Z W Y</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1  0.7631757    0 0 0 0</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 -0.1645236    0 1 1 1</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 -0.2533617    1 1 1 1</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  0.6969634    1 1 1 1</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5  0.5566632    0 0 1 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>The other three components retain information that is known in a simulation:</p>
+<p>Coefficients are drawn once from <span class="math inline">\(N(0,1)\)</span>. The coefficient <span class="math inline">\(\tau_G\)</span> is a treatment effect on the log-odds scale; it is not itself a probability difference. For other covariate distributions, transformations, and fixed coefficients, see <a href="Simulation.qmd">Simulation</a>.</p>
+<p>The simulator returns:</p>
 <ul>
-<li><code>alldata</code> contains the observed data, the true stratum <code>G</code>, unobserved <code>U</code>, potential uptake <code>W0</code> and <code>W1</code>, the assignment probability <code>propensity</code>, and conditional outcome means <code>mean_y0</code> and <code>mean_y1</code>. These means correspond to assignment <span class="math inline">\(Z=0\)</span> and <span class="math inline">\(Z=1\)</span>; for binary compliers they also correspond to received treatment <span class="math inline">\(W=0\)</span> and <span class="math inline">\(W=1\)</span>.</li>
-<li><code>weights</code> contains the coefficients actually used to generate the data. Reusing it allows new datasets to be generated under the same model.</li>
-<li><code>stratum_weights</code> is a matrix whose rows index <code>W0</code> and columns index <code>W1</code>. Zero entries exclude strata; positive entries set relative weights before normalization, rather than marginal stratum probabilities.</li>
+<li><code>data</code>: observed covariates, Z, W, and Y.</li>
+<li><code>alldata</code>: also includes transformed covariates, the true stratum G, unobserved U, potential uptake W0/W1, assignment propensity, and conditional outcome means <code>mean_y0</code>/<code>mean_y1</code> under Z = 0/1.</li>
+<li><code>setup</code>: all settings, fixed coefficients, and the stratum weight matrix. Its rows index W(0), columns index W(1); zeros exclude strata.</li>
 </ul>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(simdata<span class="sc">$</span>alldata[<span class="fu">c</span>(<span class="st">"G"</span>, <span class="st">"U"</span>, <span class="st">"W0"</span>, <span class="st">"W1"</span>, <span class="st">"propensity"</span>,</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"mean_y0"</span>, <span class="st">"mean_y1"</span>)], <span class="dv">5</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       G          U W0 W1 propensity   mean_y0   mean_y1</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 (0,0) -1.6521103  0  0  0.6691012 0.3198400 0.3198400</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 (1,1)  0.0690946  1  1  0.4572363 0.7512098 0.7512098</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 (0,1)  2.3905767  0  1  0.6378164 0.7475662 0.7362096</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4 (1,1) -1.4617717  1  1  0.8119682 0.9883143 0.9883143</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 (1,1) -0.9848063  1  1  0.6246209 0.9201217 0.9201217</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(simdata<span class="sc">$</span>weights)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [1] "g_intercept" "g_x1"        "g_x2"        "g_u"         "z_intercept"</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [6] "z_x1"        "z_x2"        "y_intercept" "y_x1"        "y_x2"       </span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [11] "y_u"         "y_w"</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>simdata<span class="sc">$</span>stratum_weights</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,]    1    1</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2,]    0    1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(simdata<span class="sc">$</span>alldata[<span class="fu">c</span>(<span class="st">"G"</span>, <span class="st">"U"</span>, <span class="st">"W0"</span>, <span class="st">"W1"</span>, <span class="st">"propensity"</span>,</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"mean_y0"</span>, <span class="st">"mean_y1"</span>)], <span class="dv">5</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       G          U W0 W1 propensity   mean_y0   mean_y1</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 (1,1) -2.0770948  1  1  0.5614858 0.9958712 0.9958712</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 (0,1)  0.8770231  0  1  0.6963828 0.7597660 0.7487739</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 (0,1)  2.5416724  0  1  0.3483394 0.7592268 0.7482182</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4 (1,1)  0.3910606  1  1  0.2137762 0.7002255 0.7002255</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 (1,1)  0.3898716  1  1  0.7495306 0.6116161 0.6116161</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
-<section id="basic-usage" class="level2">
-<h2 class="anchored" data-anchor-id="basic-usage">Basic Usage</h2>
-<p>princeBART uses a 2SLS-style formula: <code>Y ~ covariates | Z | W</code>. The following code will fit the model and print the summary:</p>
+<section id="basic-usage-and-comparison-with-2sls" class="level2">
+<h2 class="anchored" data-anchor-id="basic-usage-and-comparison-with-2sls">Basic usage and comparison with 2SLS</h2>
+<p>The formula is <code>Y ~ covariates | Z | W</code>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set up parallel backend</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plan</span>(multisession, <span class="at">workers =</span> <span class="dv">4</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the model</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">prince_BART</span>(</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> x1_1 <span class="sc">+</span> x2_1 <span class="sc">|</span> Z <span class="sc">|</span> W,</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simdata<span class="sc">$</span>data,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_chains =</span> <span class="dv">4</span>,</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_warmup =</span> <span class="dv">1000</span>,</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_samples =</span> <span class="dv">1500</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit)</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Principal Stratification BART Summary (Binary Uptake)</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; =====================================================</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Principal Strata Distribution:</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        variable      mean    median         sd        mad        q5       q95</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1     compliers 0.1664077 0.1660886 0.02818767 0.02837224 0.1210085 0.2131449</span></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  never-takers 0.1450925 0.1449459 0.01575088 0.01583875 0.1194318 0.1711149</span></span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 always-takers 0.6884998 0.6888042 0.02514888 0.02532597 0.6463705 0.7292424</span></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       rhat  ess_bulk  ess_tail</span></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 1.012171  339.3822  640.8274</span></span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 1.008330 1090.5747 2780.4247</span></span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 1.006121  464.9133 1073.0934</span></span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Mixed ATE for Compliers:</span></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                  variable       mean     median         sd        mad</span></span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1        Y(0) | compliers  0.7670455  0.7708029 0.09532668 0.09825531</span></span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2        Y(1) | compliers  0.5972219  0.6101731 0.13388239 0.12534750</span></span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     Y(0) | never-takers  0.6432346  0.6442694 0.05686322 0.05810029</span></span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4    Y(1) | always-takers  0.7919161  0.7928559 0.02165061 0.02159945</span></span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 Mixed ATE for compliers -0.1698236 -0.1604736 0.16312044 0.16330291</span></span>
-<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           q5        q95     rhat  ess_bulk  ess_tail</span></span>
-<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1  0.6049514 0.91728303 1.003643  719.6918  941.1982</span></span>
-<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  0.3528433 0.79070085 1.010824  300.3932  517.1525</span></span>
-<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  0.5489610 0.73496965 1.001001 1105.2266 2714.1037</span></span>
-<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  0.7550472 0.82602992 1.005900  667.1874 1445.0949</span></span>
-<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 -0.4533644 0.08550196 1.010171  383.5865  690.7001</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plan</span>(multisession, <span class="at">workers =</span> <span class="dv">4</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">12</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">prince_BART</span>(</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> x1_1 <span class="sc">+</span> x2_1 <span class="sc">|</span> Z <span class="sc">|</span> W,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simdata<span class="sc">$</span>data,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_chains =</span> <span class="dv">4</span>, <span class="at">n_warmup =</span> <span class="dv">500</span>, <span class="at">n_samples =</span> <span class="dv">1000</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Principal Stratification BART Summary (Binary Uptake)</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; =====================================================</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Principal Strata Distribution:</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        variable      mean    median         sd        mad        q5       q95</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1     compliers 0.1843701 0.1841383 0.03385186 0.03410724 0.1290881 0.2403931</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  never-takers 0.1245073 0.1241796 0.01528333 0.01544854 0.1000868 0.1502775</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 always-takers 0.6911226 0.6917762 0.03123126 0.03238778 0.6402392 0.7426044</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       rhat ess_bulk  ess_tail</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 1.024700 200.2481  547.8444</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 1.007672 672.8593 1584.5645</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 1.022278 210.3870  530.4252</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Mixed ATE for Compliers:</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                  variable       mean     median         sd        mad</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1        Y(0) | compliers 0.64286639 0.64336339 0.11847683 0.12072806</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2        Y(1) | compliers 0.65906250 0.66065202 0.11562643 0.11449938</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     Y(0) | never-takers 0.54102689 0.54169263 0.06569263 0.06608536</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4    Y(1) | always-takers 0.80348259 0.80411888 0.02372756 0.02371125</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 Mixed ATE for compliers 0.01619611 0.02008862 0.16971569 0.17323952</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           q5       q95     rhat ess_bulk  ess_tail</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1  0.4437811 0.8348539 1.008240 590.3707  926.7574</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  0.4654768 0.8449582 1.017065 259.0061  545.0494</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  0.4304041 0.6482708 1.008030 573.0966 1622.5723</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  0.7639577 0.8423252 1.013894 363.2815  833.6334</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 -0.2672209 0.2877487 1.019482 307.5163  602.7374</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>By default, the mixed ATE for Compliers are printed. In this simulation, the result is <code>0.1876226</code>. There are other effects that can be calculated from the fitted object, such as mixed ATE for treated Compliers. You can find additional information at <a href="Effects.qmd">Link to effects</a></p>
-<p>We identify the simulated compliers using their known potential uptake and average their conditional mean differences:</p>
+<p>The default summary reports mixed average effects for compliers. Other estimands are available through <code>extract()</code>, for example <code>extract(fit, "sate_c")</code> for sample effects; see <code>?extract</code> for definitions. The simulation supplies a reference by averaging conditional mean differences among the true compliers:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>truth <span class="ot">&lt;-</span> simdata<span class="sc">$</span>alldata</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>is_complier <span class="ot">&lt;-</span> truth<span class="sc">$</span>W0 <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> truth<span class="sc">$</span>W1 <span class="sc">==</span> <span class="dv">1</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>true_sate_c <span class="ot">&lt;-</span> <span class="fu">mean</span>((truth<span class="sc">$</span>mean_y1 <span class="sc">-</span> truth<span class="sc">$</span>mean_y0)[is_complier])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>This reference averages conditional means for the realized simulated compliers. It is not the realized difference of two binary potential outcomes, which the simulator does not return.</p>
+<p>Use <code>ivreg</code> for 2SLS, with an HC1 robust, normal-approximation 95% confidence interval. Include the covariates on both sides of the IV formula.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fit_2sls <span class="ot">&lt;-</span> <span class="fu">ivreg</span>(Y <span class="sc">~</span> W <span class="sc">+</span> x1_1 <span class="sc">+</span> x2_1 <span class="sc">|</span> Z <span class="sc">+</span> x1_1 <span class="sc">+</span> x2_1,</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data =</span> simdata<span class="sc">$</span>data)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>tsls_estimate <span class="ot">&lt;-</span> <span class="fu">unname</span>(<span class="fu">coef</span>(fit_2sls)[<span class="st">"W"</span>])</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>tsls_se <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">vcovHC</span>(fit_2sls, <span class="at">type =</span> <span class="st">"HC1"</span>)[<span class="st">"W"</span>, <span class="st">"W"</span>])</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>tsls_ci <span class="ot">&lt;-</span> tsls_estimate <span class="sc">+</span> <span class="fu">qnorm</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>)) <span class="sc">*</span> tsls_se</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>bart_draws <span class="ot">&lt;-</span> <span class="fu">mixed_effect_draws</span>(fit)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>bart_ci <span class="ot">&lt;-</span> <span class="fu">quantile</span>(bart_draws, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">Method =</span> <span class="fu">c</span>(<span class="st">"Simulation reference"</span>, <span class="st">"princeBART: mixed complier effect"</span>, <span class="st">"2SLS"</span>),</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">Estimate =</span> <span class="fu">c</span>(true_sate_c, <span class="fu">mean</span>(bart_draws), tsls_estimate),</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">Lower =</span> <span class="fu">c</span>(<span class="cn">NA</span>, bart_ci[<span class="dv">1</span>], tsls_ci[<span class="dv">1</span>]),</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">Upper =</span> <span class="fu">c</span>(<span class="cn">NA</span>, bart_ci[<span class="dv">2</span>], tsls_ci[<span class="dv">2</span>]),</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">Interval =</span> <span class="fu">c</span>(<span class="st">"Reference"</span>, <span class="st">"95% credible"</span>, <span class="st">"95% confidence"</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(comparison, <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 47%">
+<col style="width: 12%">
+<col style="width: 9%">
+<col style="width: 8%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Method</th>
+<th style="text-align: right;">Estimate</th>
+<th style="text-align: right;">Lower</th>
+<th style="text-align: right;">Upper</th>
+<th style="text-align: left;">Interval</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Simulation reference</td>
+<td style="text-align: right;">-0.012</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">Reference</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">princeBART: mixed complier effect</td>
+<td style="text-align: right;">0.016</td>
+<td style="text-align: right;">-0.325</td>
+<td style="text-align: right;">0.337</td>
+<td style="text-align: left;">95% credible</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2SLS</td>
+<td style="text-align: right;">-0.116</td>
+<td style="text-align: right;">-0.510</td>
+<td style="text-align: right;">0.278</td>
+<td style="text-align: left;">95% confidence</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>All estimates are probability differences. Agreement is not guaranteed: logistic outcome models imply heterogeneous probability differences, and 2SLS and mixed complier averages can weight those effects differently. These Wald confidence intervals also rely on adequate instrument strength.</p>
+</section>
+<section id="segment-heterogeneity" class="level2">
+<h2 class="anchored" data-anchor-id="segment-heterogeneity">Segment heterogeneity</h2>
+<p>Segment heterogeneity means that treatment effects differ across covariate-defined subpopulations. Here two populations have different X1 distributions and share all coefficients except the complier treatment coefficient: -3 in the lower-mean population and +3 in the higher-mean population. These coefficients are on the log-odds scale, not ATEs. Combine the populations and fit the model without population labels.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>sim1 <span class="ot">&lt;-</span> <span class="fu">ps_sim_setup</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">n =</span> <span class="dv">600</span>, <span class="at">x1_mean =</span> <span class="sc">-</span><span class="dv">2</span>, <span class="at">x1_var =</span> <span class="fl">0.5</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">101</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">stratum_weights =</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">8</span>, <span class="dv">1</span>), <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>sim1<span class="sc">$</span>coefficients<span class="sc">$</span>y_w[<span class="dv">1</span>, <span class="dv">2</span>] <span class="ot">&lt;-</span> <span class="dv">3</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>sim2 <span class="ot">&lt;-</span> sim1</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>sim2<span class="sc">$</span>x1_mean <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>sim2<span class="sc">$</span>seed <span class="ot">&lt;-</span> <span class="dv">102</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>sim1<span class="sc">$</span>coefficients<span class="sc">$</span>y_w[<span class="dv">1</span>, <span class="dv">2</span>] <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">3</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>simdata1 <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(sim1)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>simdata2 <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(sim2)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>data_combined <span class="ot">&lt;-</span> <span class="fu">rbind</span>(simdata1<span class="sc">$</span>data, simdata2<span class="sc">$</span>data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">103</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>fit_sh <span class="ot">&lt;-</span> <span class="fu">prince_BART</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> x1_1 <span class="sc">+</span> x2_1 <span class="sc">|</span> Z <span class="sc">|</span> W,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> data_combined,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">propensity =</span> <span class="fu">c</span>(simdata1<span class="sc">$</span>alldata<span class="sc">$</span>propensity, simdata2<span class="sc">$</span>alldata<span class="sc">$</span>propensity),</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_chains =</span> <span class="dv">4</span>, <span class="at">n_warmup =</span> <span class="dv">500</span>, <span class="at">n_samples =</span> <span class="dv">1000</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_trees =</span> <span class="dv">50</span>, <span class="at">keep_trees =</span> <span class="cn">TRUE</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Fit a tree with at most two leaves, allowing it to choose between X1 and X2. The plot summarizes estimated effects within the learned segments; it does not establish exact recovery of the generating populations.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">segment_heterogeneity</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  fit_sh,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">rpart_control =</span> rpart<span class="sc">::</span><span class="fu">rpart.control</span>(<span class="at">cp =</span> <span class="dv">0</span>, <span class="at">maxdepth =</span> <span class="dv">1</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">min_compliers_bucket =</span> <span class="dv">100</span>, <span class="at">ci_level =</span> <span class="fl">0.95</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">plot =</span> <span class="cn">TRUE</span>, <span class="at">contrast =</span> <span class="cn">TRUE</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>plot<span class="sc">$</span>effect</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Main_files/figure-html/heterogeneity-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>contrast<span class="sc">$</span>summary</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       mean        sd ci_lower ci_upper p_gt0</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 0.695187 0.1959686  0.33373 1.075726     1</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>plot<span class="sc">$</span>diff</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Main_files/figure-html/heterogeneity-contrast-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="generalizing-to-a-target-population" class="level2">
+<h2 class="anchored" data-anchor-id="generalizing-to-a-target-population">Generalizing to a target population</h2>
+<p>Reuse the source fit above, whose trees were saved with <code>keep_trees = TRUE</code>. Now draw 80% of the target from the lower-mean X1 population and 20% from the higher-mean X1 population, rather than the source’s 50/50 mix. Each population keeps its simulation setup, and both covariate distributions are represented in the source.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>target_low <span class="ot">&lt;-</span> sim1</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>target_low<span class="sc">$</span>n <span class="ot">&lt;-</span> <span class="dv">800</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>target_low<span class="sc">$</span>seed <span class="ot">&lt;-</span> <span class="dv">201</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>target_high <span class="ot">&lt;-</span> sim2</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>target_high<span class="sc">$</span>n <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>target_high<span class="sc">$</span>seed <span class="ot">&lt;-</span> <span class="dv">202</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>sim_target_low <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(target_low)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>sim_target_high <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(target_high)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>target_data <span class="ot">&lt;-</span> <span class="fu">rbind</span>(sim_target_low<span class="sc">$</span>data, sim_target_high<span class="sc">$</span>data)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>target_covariates <span class="ot">&lt;-</span> target_data[<span class="fu">c</span>(<span class="st">"x1_1"</span>, <span class="st">"x2_1"</span>)]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>general_BART()</code> averages the predicted complier effect curve over the target covariates:</p>
 <p><span class="math display">\[
-\tau_{C,\mathrm{truth}}
-=\frac{1}{n_C}\sum_{i:W_i(0)=0,\ W_i(1)=1}
-\left(\mathrm{mean\_y1}_i-\mathrm{mean\_y0}_i\right).
+\tau_{\mathrm{target}} = \frac{1}{n_T}\sum_{j=1}^{n_T}\mathrm{CATE}_C(X_j).
 \]</span></p>
-<p>This is the expected sample ATE conditional on the simulated covariates, <span class="math inline">\(U\)</span>, and strata. The generator does not return both realized binary potential outcomes, so their realized sample ATE is unavailable.</p>
+<p>The references below average known conditional outcome-mean differences among the simulated compliers. Complier membership depends on covariates in this simulation, so these references use different weighting from <code>general_BART()</code> and need not agree with it. Only target covariates enter prediction; target outcomes and true strata are used only for simulation checks. With no survey weights supplied, target units receive equal weight; the 95% credible interval incorporates a Bayesian bootstrap over units.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>truth <span class="ot">&lt;-</span> simdata<span class="sc">$</span>alldata</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>is_complier <span class="ot">&lt;-</span> truth<span class="sc">$</span>W0 <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> truth<span class="sc">$</span>W1 <span class="sc">==</span> <span class="dv">1</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">any</span>(is_complier))</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>true_sate_c <span class="ot">&lt;-</span> <span class="fu">mean</span>((truth<span class="sc">$</span>mean_y1 <span class="sc">-</span> truth<span class="sc">$</span>mean_y0)[is_complier])</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>true_sate_c</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] -0.01159444</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>We can also analyze the data using Two Stage Least Squares (2SLS), which is the convention approach for principle stratification.</p>
-<p>2SLS first predicts received treatment <code>W</code> from instrument <code>Z</code> and the covariates, then regresses <code>Y</code> on that prediction and the same covariates. Run the fitting block above and the comparison block below interactively, or enable evaluation of both blocks when rendering. The comparison uses the sample estimand from <code>extract()</code>; the earlier default <code>summary(fit)</code> reports the mixed estimand.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>first_stage <span class="ot">&lt;-</span> <span class="fu">lm</span>(W <span class="sc">~</span> Z <span class="sc">+</span> x1_1 <span class="sc">+</span> x2_1, <span class="at">data =</span> simdata<span class="sc">$</span>data)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>two_sls_data <span class="ot">&lt;-</span> simdata<span class="sc">$</span>data</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>two_sls_data<span class="sc">$</span>W_hat <span class="ot">&lt;-</span> <span class="fu">fitted</span>(first_stage)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>fit_2sls <span class="ot">&lt;-</span> <span class="fu">lm</span>(Y <span class="sc">~</span> W_hat <span class="sc">+</span> x1_1 <span class="sc">+</span> x2_1, <span class="at">data =</span> two_sls_data)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>tsls_estimates <span class="ot">&lt;-</span> <span class="fu">unname</span>(stats<span class="sc">::</span><span class="fu">coef</span>(fit_2sls)[<span class="st">"W_hat"</span>])</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>bart_effects <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">extract</span>(fit, <span class="st">"sate_c"</span>)[[<span class="dv">2</span>]])</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>bart_mean <span class="ot">&lt;-</span> bart_effects<span class="sc">$</span>mean[</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  bart_effects<span class="sc">$</span>variable <span class="sc">==</span> <span class="st">"Sample ATE for compliers"</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">Method =</span> <span class="fu">c</span>(<span class="st">"Simulation truth"</span>,</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>             <span class="st">"princeBART posterior mean"</span>,</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>             <span class="st">"2SLS estimates"</span>),</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">Estimate =</span> <span class="fu">c</span>(true_sate_c, bart_mean, tsls_estimates)</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(comparison, <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>transported <span class="ot">&lt;-</span> <span class="fu">general_BART</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">princebart_fit =</span> fit_sh,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">newdata =</span> target_covariates,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">203</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulation references: average conditional mean differences among true compliers.</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>source_reference <span class="ot">&lt;-</span> <span class="fu">with</span>(<span class="fu">rbind</span>(simdata1<span class="sc">$</span>alldata, simdata2<span class="sc">$</span>alldata),</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>((mean_y1 <span class="sc">-</span> mean_y0)[W0 <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> W1 <span class="sc">==</span> <span class="dv">1</span>]))</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>target_reference <span class="ot">&lt;-</span> <span class="fu">with</span>(<span class="fu">rbind</span>(sim_target_low<span class="sc">$</span>alldata, sim_target_high<span class="sc">$</span>alldata),</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>((mean_y1 <span class="sc">-</span> mean_y0)[W0 <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> W1 <span class="sc">==</span> <span class="dv">1</span>]))</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>source_draws <span class="ot">&lt;-</span> <span class="fu">mixed_effect_draws</span>(fit_sh)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>source_ci <span class="ot">&lt;-</span> <span class="fu">quantile</span>(source_draws, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>transport_comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">Method =</span> <span class="fu">c</span>(<span class="st">"Source: simulated compliers"</span>, <span class="st">"Source: princeBART mixed effect"</span>,</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>             <span class="st">"Target: simulated compliers"</span>, <span class="st">"Target: general_BART"</span>),</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">Estimate =</span> <span class="fu">c</span>(source_reference, <span class="fu">mean</span>(source_draws), target_reference, transported<span class="sc">$</span>pate),</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">Lower =</span> <span class="fu">c</span>(<span class="cn">NA</span>, source_ci[<span class="dv">1</span>], <span class="cn">NA</span>, transported<span class="sc">$</span>ci[<span class="dv">1</span>]),</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">Upper =</span> <span class="fu">c</span>(<span class="cn">NA</span>, source_ci[<span class="dv">2</span>], <span class="cn">NA</span>, transported<span class="sc">$</span>ci[<span class="dv">2</span>])</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(transport_comparison, <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
 <th style="text-align: left;">Method</th>
 <th style="text-align: right;">Estimate</th>
+<th style="text-align: right;">Lower</th>
+<th style="text-align: right;">Upper</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">Simulation truth</td>
-<td style="text-align: right;">-0.012</td>
+<td style="text-align: left;">Source: simulated compliers</td>
+<td style="text-align: right;">-0.311</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">princeBART posterior mean</td>
-<td style="text-align: right;">-0.174</td>
+<td style="text-align: left;">Source: princeBART mixed effect</td>
+<td style="text-align: right;">-0.239</td>
+<td style="text-align: right;">-0.411</td>
+<td style="text-align: right;">-0.056</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">2SLS estimates</td>
-<td style="text-align: right;">-0.012</td>
+<td style="text-align: left;">Target: simulated compliers</td>
+<td style="text-align: right;">-0.524</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Target: general_BART</td>
+<td style="text-align: right;">-0.120</td>
+<td style="text-align: right;">-0.521</td>
+<td style="text-align: right;">0.309</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
+<p>The changed population mix can change the average effect. Generalization requires stable conditional complier effects and covariate overlap. Where the two populations overlap, changing their mix can also change the effect at a given X, so exact transportability is not guaranteed in this example. See <code>?general_BART</code> for survey weights and target subpopulations.</p>
 </section>
-<section id="effect-heterogeneity-by-segments-mostly-unchanged-but-we-may-need-some-non-linearity" class="level2">
-<h2 class="anchored" data-anchor-id="effect-heterogeneity-by-segments-mostly-unchanged-but-we-may-need-some-non-linearity">Effect Heterogeneity by Segments (mostly unchanged, but we may need some non-linearity?)</h2>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>simdata <span class="ot">=</span> <span class="fu">ps_simulate_data</span>(n, <span class="at">x1_transform =</span> <span class="st">"relu"</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">prince_BART</span>(</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> x1_1 <span class="sc">+</span> x2_1 <span class="sc">|</span> Z <span class="sc">|</span> W,</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simdata<span class="sc">$</span>data,</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_chains =</span> <span class="dv">4</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_warmup =</span> <span class="dv">1000</span>,</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_samples =</span> <span class="dv">1500</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>We can automatically find segments (subgroups) with different conditional complier effects using a shallow regression tree on posterior mean CATE_C(x). The segment-level summaries in res$effects correspond to subgroup-specific average effects among compliers, obtained by averaging conditional effects within each covariate-defined segment. Differences across segments highlight departures from effect homogeneity and provide an interpretable summary of treatment effect heterogeneity.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">segment_heterogeneity</span>(</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  fit,</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">min_compliers_bucket =</span> <span class="dv">50</span>,</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">plot =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">contrast =</span> <span class="cn">TRUE</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>contrast<span class="sc">$</span>summary</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        mean        sd   ci_lower  ci_upper     p_gt0</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 0.2178362 0.2267148 -0.1519342 0.5904339 0.8278333</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>plot<span class="sc">$</span>diff</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="Main_files/figure-html/heterogeneity-1.png" class="img-fluid figure-img" style="width:100.0%" alt="Difference in estimated complier effects across covariate-defined segments from a shallow tree summary."></p>
-</figure>
-</div>
-</div>
-</div>
-<p>The segment-level summaries in res$effects correspond to subgroup-specific average effects among compliers, obtained by averaging conditional effects within each covariate-defined segment. Differences across segments highlight departures from effect homogeneity and provide an interpretable summary of treatment effect heterogeneity. Segments are constructed post hoc to summarize heterogeneity in the posterior distribution of CATE_C(x).</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>effects</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   segment    mean    sd ci_lower ci_upper p_gt0   n n_group</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   overall  0.0425 0.100   -0.126    0.203 0.676 800   257.3</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      x2_1 -0.0311 0.104   -0.208    0.137 0.387 383   168.7</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  not x2_1  0.1868 0.209   -0.150    0.534 0.814 417    88.6</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>plot<span class="sc">$</span>effect</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="Main_files/figure-html/heterogeneity_effects-1.png" class="img-fluid figure-img" style="width:100.0%" alt="Estimated subgroup-specific average complier effects for each identified segment."></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-<section id="generalization-to-target-population-needs-updated-simulation-framework" class="level2">
-<h2 class="anchored" data-anchor-id="generalization-to-target-population-needs-updated-simulation-framework">Generalization to target population (needs updated simulation framework)</h2>
-<p>in the ps_simulate_data.R, generate a new function ps_simulate_target(), which takes the simdata object and return another simdata object, that is generated with the same weight, but different dstribution of x1 and x2. the parameter should be the following: source: a named list returned by ps_simulate_data() ?</p>
-</section>
-<section id="count-valued-z" class="level2">
-<h2 class="anchored" data-anchor-id="count-valued-z">Count-valued Z</h2>
-<p>For count or ordinal uptake <span class="math inline">\(W\)</span>, <span class="math inline">\(Z\)</span> remains binary. Each principal stratum becomes a pair <span class="math inline">\(G=(W(0),W(1))=(a,b)\)</span>, representing the uptake when the instrument is set at 2 different levels. The current ordinal model assumes <span class="math inline">\(b\leq a\)</span>: assignment can reduce uptake.</p>
-<p>The causal effect of interest is:</p>
+<section id="count-and-ordinal-uptake" class="level2">
+<h2 class="anchored" data-anchor-id="count-and-ordinal-uptake">Count and ordinal uptake</h2>
+<p>For count or ordinal W, the instrument Z remains binary. Principal strata are pairs G = (W(0), W(1)) = (a, b). The current ordinal model uses the opposite monotonicity direction to the binary model: b &lt;= a, so assignment can reduce uptake.</p>
+<p>Within a stratum, the assignment contrast is</p>
 <p><span class="math display">\[
-E[Y (1)-Y(0)\mid G=(a,b)]
+E[Y\mid Z=1,G=(a,b),X=x]-E[Y\mid Z=0,G=(a,b),X=x].
 \]</span></p>
-<p>BART models potential uptake and outcome probabilities while imputing the missing member of each pair. Fit this model with <code>uptake_type = "ordinal"</code>. See <a href="Count_data.qmd">Count data</a> for a full simulation using count data.</p>
+<p>Under exclusion, this compares uptake b with uptake a. The current ordinal summary focuses on units with W(0) - W(1) = 1. Fit this model using <code>uptake_type = "ordinal"</code>; see <code>?prince_BART</code> for model options.</p>
 </section>
 
 </main>
