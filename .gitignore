@@ -13,4 +13,8 @@ analyses/misc.rmd
 *_files/
 *_cache/
 *guidelines.qmd
-/working_folder/reproduce studies/private
+*/reproduce studies/Indonesia PKH/data
+*/reproduce studies/Malawi Family Planning/data
+*/reproduce studies/Minneapolis Domestic Violence/data
+*/reproduce studies/Oregon Health Insurance/data
+*AI.txt

@@ -1,0 +1,142 @@
+---
+title: "Minneapolis domestic violence: 2SLS and princeBART"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  message: false
+  cache: false
+---
+
+# Study overview
+
+[Angrist (2006)](https://doi.org/10.1007/s11292-005-5126-x) reanalyzed randomized
+arrest, advice, and separation assignments with imperfect compliance. Adjusted
+2SLS estimated a 0.140 increase in re-arrest risk under non-arrest (SE 0.053).
+The original recidivism variable was unavailable, so his program reconstructed
+outcomes from published logistic coefficients. After excluding other delivered
+dispositions, let $A_i\in\{1,2,3\}$ denote assignment to arrest, advice, or
+separation, and $r_i$ the fractional rank of incident $i$ within its assignment
+arm, preserving file order. The reconstruction is
+
+$$
+Y_i=\mathbf{1}\{r_i<\operatorname{expit}(-b_{A_i})\},
+\qquad (b_1,b_2,b_3)=(2.11,1.42,1.21).
+$$
+
+Principal stratification targets the non-arrest effect among compliers.
+This comparison evaluates methods on reconstructed outcomes, not independently
+observed recidivism. The [author manuscript](Angrist_2006_author_manuscript.pdf)
+and reconstruction code are retained locally.
+
+# Dataset
+
+```{r load-data}
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ivreg)
+  library(sandwich)
+  library(princeBART)
+  library(future)
+  library(posterior)
+})
+
+load("processed_data.rda")
+head(dat, 5)
+```
+
+- **Outcome (`fail_z`):** reconstructed re-arrest indicator.
+- **Treatment (`d_coddled`):** delivered non-arrest (advice or separation).
+- **Instrument (`z_coddled`):** assigned non-arrest.
+- **Covariates:** year, quarter, non-white victim, different victim/suspect race,
+  weapon, and suspect chemical-influence indicators. `ID` is not a predictor.
+
+# Objective 1: Non-arrest effects among compliers
+
+## 2SLS analysis
+
+Use the adjusted specification from Table 3, column 4. Conventional standard
+errors reproduce the original analysis; HC1 robust intervals provide a second
+comparison. Neither accounts for uncertainty in reconstructing the outcome.
+
+```{r two-stage-least-squares}
+fit_iv <- ivreg(
+  fail_z ~ d_coddled + y82 + q1 + q2 + q3 + nonwhite + mixed + weapon + chem |
+    z_coddled + y82 + q1 + q2 + q3 + nonwhite + mixed + weapon + chem,
+  data = dat
+)
+iv_estimate <- unname(coef(fit_iv)["d_coddled"])
+iv_se <- sqrt(vcovHC(fit_iv, type = "HC1")["d_coddled", "d_coddled"])
+reproduced_se <- sqrt(vcov(fit_iv)["d_coddled", "d_coddled"])
+critical <- qnorm(c(0.025, 0.975))
+iv_result <- c(iv_estimate, iv_estimate + critical * iv_se)
+reproduced_result <- c(iv_estimate, iv_estimate + critical * reproduced_se)
+```
+
+## princeBART approach
+
+Fit the same 314 incidents and covariates with four chains and four workers.
+The supplied instrument propensity is the sample non-arrest assignment fraction.
+Report the mixed complier effect and an equal-tail 95% credible interval.
+
+```{r princebart}
+plan(multisession, workers = 4)
+set.seed(20261102)
+fit_ps <- prince_BART(
+  fail_z ~ y82 + q1 + q2 + q3 + nonwhite + mixed + weapon + chem | z_coddled | d_coddled,
+  data = dat, propensity = rep(mean(dat$z_coddled), nrow(dat)),
+  uptake_type = "binary", n_chains = 4, workers = 4,
+  n_warmup = 500, n_samples = 1000, n_trees = 50,
+  keep_trees = FALSE
+)
+plan(sequential)
+
+effect_chains <- lapply(fit_ps$chains, function(chain) {
+  pc <- 1 - chain$p_a - chain$p_n
+  rowSums(pc * (chain$m_y1c - chain$m_y0c)) / rowSums(pc)
+})
+tau <- unlist(effect_chains, use.names = FALSE)
+bart_result <- c(mean(tau), quantile(tau, c(0.025, 0.975), names = FALSE))
+effect_draws <- as_draws_array(array(
+  unlist(effect_chains), c(length(effect_chains[[1]]), length(effect_chains), 1),
+  dimnames = list(NULL, NULL, "Complier effect")
+))
+summarise_draws(effect_draws) |> select(variable, rhat, ess_bulk, ess_tail)
+```
+
+## Comparison
+
+Effects below are **percentage-point changes** in reconstructed re-arrest risk.
+The published CI is reconstructed from rounded estimates and SEs. Differences
+between Bayesian and IV results do not validate either method on observed crime.
+
+```{r comparison}
+paper_result <- c(0.140, 0.140 + critical * 0.053)
+comparison <- tibble(
+  Method = c("Published adjusted 2SLS", "Reproduced 2SLS: conventional SE",
+             "2SLS: HC1 robust SE", "princeBART: mixed complier effect"),
+  Estimate_pp = 100 * c(paper_result[1], reproduced_result[1], iv_result[1], bart_result[1]),
+  Lower_pp = 100 * c(paper_result[2], reproduced_result[2], iv_result[2], bart_result[2]),
+  Upper_pp = 100 * c(paper_result[3], reproduced_result[3], iv_result[3], bart_result[3]),
+  Interval = c("95% CI (reconstructed)", "95% CI", "95% CI", "95% CrI")
+)
+comparison
+```
+
+## Effect heterogeneity
+
+A shallow tree summarizes posterior conditional effects using the recorded
+covariates. These exploratory segments can reflect the artificial allocation
+of outcomes to rows; they are not established subgroups of recidivism risk.
+
+```{r heterogeneity}
+segments <- segment_heterogeneity(
+  fit_ps,
+  rpart_control = rpart::rpart.control(cp = 0, maxdepth = 2),
+  min_compliers_bucket = 30, ci_level = 0.95, plot = TRUE
+)
+as_tibble(segments$effects) |>
+  select(segment, mean, ci_lower, ci_upper, n, n_group)
+segments$plot$effect
+```

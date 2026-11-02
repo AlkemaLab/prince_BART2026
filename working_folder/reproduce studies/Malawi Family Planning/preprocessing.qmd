@@ -1,0 +1,78 @@
+---
+title: "Malawi family planning: preprocessing"
+format:
+  html:
+    code-fold: true
+execute:
+  message: false
+---
+
+# Data preparation
+
+Use the 2018 records with `termflag == 0`. Pregnancy is the outcome because
+endline employment (`woman_works`) is not supplied; `work_bl` remains a baseline
+covariate. Original variable names are retained.
+
+```{r prepare-data}
+suppressPackageStartupMessages({
+  library(haven)
+  library(dplyr)
+})
+
+dat <- local({
+  raw <- read_dta("data/dataverse_files/MFPS_PNAS_MAIN_ITT_DATA.dta")
+  out <- raw |>
+    filter(year == 2018, termflag == 0) |>
+    transmute(
+      caseid_n = as.numeric(caseid_n),
+      next_preg_2018 = as.numeric(next_preg_2018),
+      curr_use_inj_adj = as.numeric(curr_use_inj_adj),
+      treatment = as.numeric(treatment),
+      exposure = as.numeric(exposure),
+      across(c(curr_use_inj_adj_bl, preg_bl, area_bl, age_group_bl, sex_age_bl,
+               total_alive_bl, ever_use_bl, edu_primary_bl, work_bl,
+               religion_r_bl, ethnicity_r_bl), as.numeric)
+    ) |>
+    mutate(area_bl = factor(area_bl), age_group_bl = factor(age_group_bl))
+  stopifnot(!anyDuplicated(out$caseid_n),
+            all(out$next_preg_2018 %in% c(0, 1, NA)),
+            all(out$curr_use_inj_adj %in% 0:1), all(out$treatment %in% 0:1))
+  out
+})
+save(dat, file = "processed_data.rda", compress = "xz")
+head(dat, 5)
+```
+
+# Variables and availability
+
+Missing percentages describe the 1,605 eligible endline records before
+complete-case exclusions. The analysis uses available cases for the original
+ITT specification and a common complete-case sample for 2SLS and princeBART.
+The saved `processed_data.rda` contains only `dat`.
+
+```{r variable-availability}
+local({
+  variables <- tibble(
+    Variable = c(names(dat), "woman_works"),
+    Source = c(rep("Main ITT file", ncol(dat)), "Not supplied"),
+    Role = c("Identifier", "Outcome", "Treatment", "Instrument", "ITT adjustment",
+             rep("Covariate", 11), "Unavailable outcome; excluded"),
+    Description = c("Woman identifier", "Pregnancy since index birth by 2018 interview",
+      "Endline modern contraceptive use", "Randomized assignment to FP access",
+      "Months since index birth", "Baseline contraceptive use", "Baseline pregnancy",
+      "Baseline area", "Baseline age group", "Age at sexual debut",
+      "Living children at baseline", "Ever used family planning at baseline",
+      "Baseline primary education", "Baseline work", "Baseline religion indicator",
+      "Baseline ethnicity indicator", "Endline employment"),
+    Missing_percent = vapply(Variable, function(variable) {
+      if (!variable %in% names(dat)) return(100)
+      round(100 * mean(is.na(dat[[variable]])), 2)
+    }, numeric(1)),
+    Availability = ifelse(!Variable %in% names(dat), "Not supplied; excluded",
+                          ifelse(Missing_percent > 0, "Partially observed", "Available"))
+  )
+  knitr::kable(variables, row.names = FALSE)
+})
+```
+
+Source: the authors' `data/dataverse_files/READ ME.txt` and supplied Stata files.

@@ -1,0 +1,153 @@
+---
+title: "Malawi family planning: pregnancy analysis"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  message: false
+  cache: false
+---
+
+# Study overview
+
+[Karra et al. (2022)](https://doi.org/10.1073/pnas.2200279119) randomized
+2,143 women to improved family planning access or control. The intervention
+increased contraceptive use and reduced subsequent pregnancy; the adjusted
+pregnancy ITT was -3.7 percentage points. Here assignment instruments endline
+modern contraceptive use to estimate pregnancy effects among use compliers.
+This extension is exploratory: endline use may follow pregnancy, and the
+intervention may affect pregnancy through other pathways. Employment is not
+available, so pregnancy is retained as the outcome. The [paper](Karra_2022.pdf)
+is available locally.
+
+# Dataset
+
+```{r load-data}
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ivreg)
+  library(sandwich)
+  library(princeBART)
+  library(future)
+  library(posterior)
+})
+
+load("processed_data.rda")
+head(dat, 5)
+```
+
+- **Outcome (`next_preg_2018`):** pregnancy since the index birth by the 2018 interview.
+- **Treatment (`curr_use_inj_adj`):** endline modern contraceptive use.
+- **Instrument (`treatment`):** randomized assignment to family planning access.
+- **Covariates:** baseline contraceptive use, pregnancy, area, age group, age at
+  sexual debut, living children, ever use, education, work, religion, and ethnicity.
+  `exposure` is included only in the original ITT replication.
+
+# Objective 1: Pregnancy among contraceptive-use compliers
+
+## Reproduce the original ITT
+
+Use the authors' adjusted pregnancy specification in `DO_3_MAIN_RESULTS.do`,
+with available cases and an HC1 robust, t-based 95% confidence interval.
+
+```{r reproduce-itt}
+fit_itt <- lm(
+  next_preg_2018 ~ treatment + exposure + preg_bl + area_bl + age_group_bl +
+    sex_age_bl + total_alive_bl + ever_use_bl + edu_primary_bl + work_bl +
+    religion_r_bl + ethnicity_r_bl,
+  data = dat, na.action = na.omit
+)
+itt_estimate <- unname(coef(fit_itt)["treatment"])
+itt_se <- sqrt(vcovHC(fit_itt, type = "HC1")["treatment", "treatment"])
+itt_result <- c(itt_estimate,
+                itt_estimate + qt(c(0.025, 0.975), df.residual(fit_itt)) * itt_se)
+```
+
+## 2SLS analysis
+
+The IV models use the same complete-case sample and baseline covariates.
+The 95% confidence interval uses HC1 robust standard errors and normal quantiles.
+
+```{r two-stage-least-squares}
+dat <- dat |>
+  select(-exposure) |>
+  filter(if_all(everything(), ~ !is.na(.x))) |>
+  droplevels()
+fit_iv <- ivreg(
+  next_preg_2018 ~ curr_use_inj_adj + curr_use_inj_adj_bl + preg_bl + area_bl +
+    age_group_bl + sex_age_bl + total_alive_bl + ever_use_bl + edu_primary_bl +
+    work_bl + religion_r_bl + ethnicity_r_bl |
+    treatment + curr_use_inj_adj_bl + preg_bl + area_bl + age_group_bl +
+    sex_age_bl + total_alive_bl + ever_use_bl + edu_primary_bl + work_bl +
+    religion_r_bl + ethnicity_r_bl,
+  data = dat
+)
+iv_estimate <- unname(coef(fit_iv)["curr_use_inj_adj"])
+iv_se <- sqrt(vcovHC(fit_iv, type = "HC1")["curr_use_inj_adj", "curr_use_inj_adj"])
+iv_result <- c(iv_estimate, iv_estimate + qnorm(c(0.025, 0.975)) * iv_se)
+```
+
+## princeBART approach
+
+Report the mixed complier effect with a 95% equal-tail credible interval.
+
+```{r princebart}
+plan(multisession, workers = 4)
+set.seed(20261102)
+fit_ps <- prince_BART(
+  next_preg_2018 ~ curr_use_inj_adj_bl + preg_bl + area_bl + age_group_bl +
+    sex_age_bl + total_alive_bl + ever_use_bl + edu_primary_bl + work_bl +
+    religion_r_bl + ethnicity_r_bl | treatment | curr_use_inj_adj,
+  data = dat, uptake_type = "binary", n_chains = 4, workers = 4,
+  n_warmup = 500, n_samples = 1000, n_trees = 50, keep_trees = FALSE
+)
+plan(sequential)
+
+effect_chains <- lapply(fit_ps$chains, function(chain) {
+  pc <- 1 - chain$p_a - chain$p_n
+  rowSums(pc * (chain$m_y1c - chain$m_y0c)) / rowSums(pc)
+})
+tau <- unlist(effect_chains, use.names = FALSE)
+bart_result <- c(mean(tau), quantile(tau, c(0.025, 0.975), names = FALSE))
+effect_draws <- as_draws_array(array(
+  unlist(effect_chains), c(length(effect_chains[[1]]), length(effect_chains), 1),
+  dimnames = list(NULL, NULL, "Complier effect")
+))
+summarise_draws(effect_draws) |> select(variable, rhat, ess_bulk, ess_tail)
+```
+
+## Comparison
+
+Effects are percentage-point changes in pregnancy risk. Published and reproduced
+ITT estimates concern assignment; the IV methods concern contraceptive-use
+compliers. Their estimands and samples differ. Follow-up duration also varies,
+so this is not a fixed 24-month pregnancy endpoint.
+
+```{r comparison}
+comparison <- tibble(
+  Method = c("Published adjusted ITT", "Reproduced adjusted ITT", "2SLS complier effect",
+             "princeBART mixed complier effect"),
+  Estimate_pp = 100 * c(-0.037, itt_result[1], iv_result[1], bart_result[1]),
+  Lower_pp = 100 * c(-0.0621, itt_result[2], iv_result[2], bart_result[2]),
+  Upper_pp = 100 * c(-0.0111, itt_result[3], iv_result[3], bart_result[3]),
+  Interval = c("95% CI", "95% CI", "95% CI", "95% CrI")
+)
+comparison
+```
+
+## Effect heterogeneity
+
+A shallow tree summarizes fitted conditional effects over baseline covariates.
+These exploratory segments do not resolve the timing or exclusion assumptions.
+
+```{r heterogeneity}
+segments <- segment_heterogeneity(
+  fit_ps,
+  rpart_control = rpart::rpart.control(cp = 0, maxdepth = 2),
+  min_compliers_bucket = 30, ci_level = 0.95, plot = TRUE
+)
+as_tibble(segments$effects) |>
+  select(segment, mean, ci_lower, ci_upper, n, n_group)
+segments$plot$effect
+```

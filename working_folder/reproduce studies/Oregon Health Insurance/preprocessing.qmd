@@ -1,0 +1,83 @@
+---
+title: "Oregon health insurance: preprocessing"
+format:
+  html:
+    code-fold: true
+execute:
+  message: false
+---
+
+# Data preparation
+
+Join the supplied descriptive and state-program records by `person_id`.
+The code saves only `dat` in `processed_data.rda` for
+[Analysis.qmd](Analysis.qmd). The raw ICPSR files remain in `data/`.
+
+```{r prepare-data}
+suppressPackageStartupMessages({
+  library(haven)
+  library(dplyr)
+})
+
+dat <- local({
+  descriptive <- read_dta("data/ICPSR_34314/DS0001/34314-0001-Data.dta")
+  programs <- read_dta("data/ICPSR_34314/DS0002/34314-0002-Data.dta")
+  stopifnot(!anyDuplicated(descriptive$person_id),
+            !anyDuplicated(programs$person_id),
+            setequal(descriptive$person_id, programs$person_id),
+            all(is.na(descriptive$numhh_list)))
+
+  out <- descriptive |>
+    transmute(
+      person_id = as.integer(person_id),
+      household_id = as.integer(household_id),
+      postn_death = as.integer(postn_death),
+      treatment = as.integer(treatment),
+      draw_lottery = factor(as.integer(draw_lottery)),
+      have_phone_list = as.integer(have_phone_list),
+      pobox_list = as.integer(pobox_list),
+      self_list = as.integer(self_list),
+      week_list = factor(as.integer(week_list))
+    ) |>
+    left_join(
+      transmute(programs, person_id = as.integer(person_id),
+                ohp_all_ever_matchn_30sep2009 = as.integer(ohp_all_ever_matchn_30sep2009)),
+      by = "person_id"
+    )
+  stopifnot(nrow(out) == 74922L, !anyNA(out),
+            all(out$postn_death %in% 0:1), all(out$ohp_all_ever_matchn_30sep2009 %in% 0:1), all(out$treatment %in% 0:1))
+  out
+})
+save(dat, file = "processed_data.rda", compress = "xz")
+head(dat, 5)
+```
+
+# Variables and availability
+
+Missingness is measured across all 74,922 people before any analysis exclusions.
+`numhh_list` is restricted and excluded from the saved model data. Household
+identifiers remain available for clustering; counting retained people does not
+recover the original lottery-list household size.
+
+```{r variable-availability}
+local({
+  variables <- tibble(
+    Variable = c(names(dat), "numhh_list"),
+    Source = c(rep("DS0001", 9), "DS0002", "DS0001"),
+    Role = c("Identifier", "Cluster identifier", "Outcome", "Instrument",
+             rep("Covariate", 5), "Treatment", "Unavailable covariate"),
+    Description = c("Person identifier", "Household identifier", "Death after notification",
+      "Lottery selection", "Lottery/matched draw", "Phone number supplied at signup",
+      "PO-box address at signup", "Self-registration", "Signup week",
+      "Any Medicaid enrollment through September 2009", "Household members on lottery list"),
+    Availability = c(rep("Available", ncol(dat)), "Restricted; excluded"),
+    Missing_percent = c(vapply(dat, function(x) round(100 * mean(is.na(x)), 2), numeric(1)), 100)
+  )
+  knitr::kable(variables, row.names = FALSE)
+})
+```
+
+The [ICPSR codebook](data/ICPSR_34314/34314-Codebook.pdf), PDF page 4,
+confirms that `numhh_list` was recoded to missing. Mortality is available, but
+its public-file window ends before January 2010; the paper ends follow-up in
+September 2009.

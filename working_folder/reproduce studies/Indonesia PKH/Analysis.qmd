@@ -1,0 +1,174 @@
+---
+title: "Indonesia PKH: maternal healthcare after six years"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  message: false
+  cache: false
+---
+
+# Study overview
+
+[Cahyadi et al. (2020)](https://doi.org/10.1257/pol.20190245) studied Indonesia's
+conditional cash transfer program after six years of randomized rollout. Their
+IV estimates indicated increases of 23.3 percentage points in skilled birth
+attendance and 17.1 points in facility delivery. Here original subdistrict
+assignment instruments household PKH receipt by 2013. We compare the published
+estimates with reconstructed 2SLS and princeBART complier effects, then summarize
+heterogeneity across baseline household characteristics. The analysis concerns
+recorded deliveries among surveyed women, not every woman in the original cohort.
+The [paper](Cahyadi_2020.pdf) is retained locally.
+
+# Dataset
+
+```{r load-data}
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ivreg)
+  library(sandwich)
+  library(princeBART)
+  library(future)
+  library(posterior)
+})
+
+load("processed_data.rda")
+head(dat, 5)
+```
+
+- **Outcomes:** `good_assisted_delivery` and `delivery_facility`, both binary.
+- **Treatment:** `pkh_by_this_wave`, household PKH receipt by the 2013 wave.
+- **Instrument:** `L07`, original randomized rollout assignment.
+- **Covariates:** baseline household-head occupation/education, housing,
+  water/sanitation, electricity, household size, expenditure, and missingness
+  indicators. `kabupaten` supplies district adjustment; `kecamatan` identifies
+  the subdistrict clusters. Linkage and pregnancy-source fields are not predictors.
+
+## Common sample and model specification
+
+Retain the authors' baseline coding and district adjustment. Constant predictors
+are omitted. Both outcomes use the same complete-case sample; multiple records
+from one mother remain, as in the pregnancy-record construction.
+
+```{r prepare-analysis}
+baseline_controls <- grep("_baseline_(nm|miss)$", names(dat), value = TRUE)
+required <- c("good_assisted_delivery", "delivery_facility", "L07",
+              "pkh_by_this_wave", "kabupaten", "kecamatan", baseline_controls)
+dat <- dat[complete.cases(dat[required]), ] |> droplevels()
+baseline_controls <- baseline_controls[vapply(dat[baseline_controls],
+  function(x) n_distinct(x) > 1L, logical(1))]
+covariate_rhs <- paste(c("kabupaten", baseline_controls), collapse = " + ")
+# Remove redundant linear controls from the IV formula, preserving their span.
+control_matrix <- model.matrix(as.formula(paste("~", covariate_rhs)), data = dat)
+control_qr <- qr(control_matrix)
+independent <- colnames(control_matrix)[control_qr$pivot[seq_len(control_qr$rank)]]
+iv_covariate_rhs <- paste(c("kabupaten", intersect(baseline_controls, independent)), collapse = " + ")
+settings <- list(n_chains = 4L, workers = 4L, n_warmup = 500L,
+                 n_samples = 750L, n_trees = 50L)
+```
+
+The common sample contains **`r nrow(dat)` delivery records** in
+**`r n_distinct(dat$kecamatan)` subdistricts**. Instrument propensity is estimated
+internally. IV standard errors are clustered by subdistrict. princeBART uses the
+same predictors flexibly, but its likelihood does not adjust for clustering.
+The credible intervals therefore do not represent cluster-adjusted uncertainty.
+Redundant dummy and missingness-indicator columns are omitted from the IV formula;
+the linear adjustment space is unchanged.
+
+## Estimation and comparison
+
+The shared function fits both methods, computes 95% intervals and MCMC diagnostics,
+and produces a shallow-tree heterogeneity summary. Effects are reported in
+percentage points. Published intervals are reconstructed from rounded clustered
+SEs in Table 2; these are marginal intervals, not Romano--Wolf-adjusted intervals.
+The original randomization, exclusion, and monotonicity assumptions remain
+necessary; selection into observed delivery records also limits interpretation.
+
+```{r estimation-methods}
+analyze_pkh <- function(outcome, published_estimate, published_se) {
+  iv_formula <- as.formula(paste(outcome, "~ pkh_by_this_wave +", iv_covariate_rhs,
+                                  "| L07 +", iv_covariate_rhs))
+  fit_iv <- ivreg(iv_formula, data = dat)
+  iv_estimate <- unname(coef(fit_iv)["pkh_by_this_wave"])
+  iv_se <- sqrt(vcovCL(fit_iv, cluster = dat$kecamatan,
+                       type = "HC1", cadjust = TRUE)["pkh_by_this_wave", "pkh_by_this_wave"])
+
+  old_plan <- plan()
+  on.exit(plan(old_plan), add = TRUE)
+  if (settings$workers == 1L) plan(sequential) else plan(multisession, workers = settings$workers)
+  set.seed(20261102)
+  fit_ps <- prince_BART(
+    as.formula(paste(outcome, "~", covariate_rhs, "| L07 | pkh_by_this_wave")),
+    data = dat, uptake_type = "binary", n_chains = settings$n_chains,
+    workers = settings$workers, n_warmup = settings$n_warmup,
+    n_samples = settings$n_samples, n_trees = settings$n_trees, keep_trees = FALSE
+  )
+  plan(sequential)
+  chains <- lapply(fit_ps$chains, function(chain) {
+    pc <- 1 - chain$p_a - chain$p_n
+    rowSums(pc * (chain$m_y1c - chain$m_y0c)) / rowSums(pc)
+  })
+  tau <- unlist(chains, use.names = FALSE)
+  critical <- qnorm(c(0.025, 0.975))
+  comparison <- tibble(
+    Method = c("Published 2SLS", "Reconstructed 2SLS", "princeBART mixed complier effect"),
+    Estimate_pp = 100 * c(published_estimate, iv_estimate, mean(tau)),
+    Lower_pp = 100 * c(published_estimate + critical[1] * published_se,
+                       iv_estimate + critical[1] * iv_se, quantile(tau, 0.025)),
+    Upper_pp = 100 * c(published_estimate + critical[2] * published_se,
+                       iv_estimate + critical[2] * iv_se, quantile(tau, 0.975)),
+    Interval = c("95% CI (reconstructed)", "95% clustered CI", "95% CrI")
+  )
+  draws <- as_draws_array(array(unlist(chains),
+    c(length(chains[[1]]), length(chains), 1),
+    dimnames = list(NULL, NULL, "Complier effect")))
+  segments <- segment_heterogeneity(
+    fit_ps, rpart_control = rpart::rpart.control(cp = 0, maxdepth = 2),
+    min_compliers_bucket = 50, ci_level = 0.95, plot = TRUE
+  )
+  list(comparison = comparison,
+       diagnostics = summarise_draws(draws) |> select(variable, rhat, ess_bulk, ess_tail),
+       effects = as_tibble(segments$effects) |>
+         select(segment, mean, ci_lower, ci_upper, n, n_group),
+       plot = segments$plot$effect)
+}
+```
+
+# Objective 1: Skilled birth attendance
+
+## 2SLS and princeBART comparison
+
+```{r assisted-delivery}
+assisted <- analyze_pkh("good_assisted_delivery", published_estimate = 0.233, published_se = 0.059)
+assisted$comparison
+assisted$diagnostics
+```
+
+## Effect heterogeneity
+
+```{r assisted-heterogeneity}
+assisted$effects
+assisted$plot
+```
+
+# Objective 2: Delivery at a health facility
+
+## 2SLS and princeBART comparison
+
+```{r facility-delivery}
+facility <- analyze_pkh("delivery_facility", published_estimate = 0.171, published_se = 0.066)
+facility$comparison
+facility$diagnostics
+```
+
+## Effect heterogeneity
+
+```{r facility-heterogeneity}
+facility$effects
+facility$plot
+```
+
+Segment effects and their 95% credible intervals are probability differences.
+These post hoc summaries describe the fitted effect curves; they do not confirm
+subgroup differences or account for selection of the tree from the same data.

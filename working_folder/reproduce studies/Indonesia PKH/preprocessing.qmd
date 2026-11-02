@@ -1,0 +1,152 @@
+---
+title: "Indonesia PKH: preprocessing"
+format:
+  html:
+    code-fold: true
+execute:
+  message: false
+---
+
+# Data preparation
+
+Link the supplied 2013 maternal records to pregnancy histories using `iid_w4`.
+The authors' coded fertility dataset already contains the household treatment,
+district, subdistrict, and baseline controls used in their maternal analysis.
+This avoids rebuilding the full Stata pipeline. Raw files remain unchanged.
+
+```{r prepare-data}
+suppressPackageStartupMessages({
+  library(haven)
+  library(dplyr)
+})
+
+dat <- local({
+  coded_file <- "data/data/coded/mothers_fertility_timing.dta"
+  metadata <- read_dta(coded_file, n_max = 0)
+  controls <- names(metadata)[grepl("_baseline_(nm|miss)$", names(metadata))]
+  # table2.do excludes the food/non-food expenditure controls and their flags.
+  controls <- controls[!grepl("logpcexp_(food|nonfood)", controls)]
+  mothers <- read_dta(coded_file, col_select = all_of(c(
+    "iid", "iid_w4", "rid_merge", "survey_round", "L07", "pkh_by_this_wave",
+    "kabupaten", "kecamatan", controls
+  ))) |>
+    filter(survey_round == 2, !is.na(L07))
+  stopifnot(!anyDuplicated(mothers$iid_w4))
+
+  pregnancies <- read_dta(
+    "data/data/raw/Wave IV/I_CH.dta",
+    col_select = c("iid", "ich02_line", "ich02", "ich24", "ich25")
+  )
+  out <- mothers |>
+    inner_join(pregnancies, by = c("iid_w4" = "iid"), relationship = "one-to-many") |>
+    mutate(
+      L07 = as.integer(L07),
+      pkh_by_this_wave = as.integer(pkh_by_this_wave),
+      kabupaten = factor(as.integer(kabupaten)),
+      kecamatan = as.integer(kecamatan),
+      across(all_of(controls), as.numeric),
+      good_assisted_delivery = if_else(
+        is.na(ich25) | trimws(ich25) == "", NA_integer_,
+        as.integer(grepl("A|B", ich25))
+      ),
+      delivery_facility = if_else(is.na(ich24), NA_integer_, as.integer(ich24 < 7))
+    )
+  stopifnot(!anyDuplicated(out[c("iid_w4", "ich02_line")]),
+            all(out$L07 %in% 0:1), all(out$pkh_by_this_wave %in% c(0, 1, NA)),
+            all(out$good_assisted_delivery %in% c(0, 1, NA)),
+            all(out$delivery_facility %in% c(0, 1, NA)))
+  out
+})
+save(dat, file = "processed_data.rda", compress = "xz")
+head(dat, 5)
+```
+
+The unit is a pregnancy record, so a mother can contribute more than one record.
+Outcomes are observed for deliveries; ongoing pregnancies and other inapplicable
+records can have missing outcomes. The analysis uses one common complete-case
+sample for both outcomes and both estimation methods.
+
+`good_assisted_delivery` follows the authors' `ich25` coding: doctor (`A`) or
+midwife (`B`). `delivery_facility` follows `ich24 < 7`; missing responses remain
+missing. The treatment is **ever received PKH by the 2013 wave**, not just current
+receipt. Controls ending in `_nm` are the authors' baseline values with missing
+values replaced by zero; paired `_miss` columns indicate that replacement.
+
+# Variables and availability
+
+Missing percentages describe the linked records before complete-case exclusions.
+For zero-filled controls, `Source_missing_percent` reports the original baseline
+missingness indicated by the paired flag; blanks mean not applicable. Zero-filled
+values are not evidence that the underlying baseline measure was observed.
+
+```{r variable-availability}
+local({
+  describe_control <- function(variable) {
+    base <- sub("_baseline_(nm|miss)$", "", variable)
+    description <- case_when(
+      grepl("^hh_educ_", base) ~ paste("Head education indicator", sub("hh_educ_", "", base)),
+      grepl("^roof_type", base) ~ paste("Roof-material indicator", sub("roof_type", "", base)),
+      grepl("^wall_type", base) ~ paste("Wall-material indicator", sub("wall_type", "", base)),
+      grepl("^floor_type", base) ~ paste("Floor-material indicator", sub("floor_type", "", base)),
+      base == "hh_head_agr" ~ "Household head in agriculture",
+      base == "hh_head_serv" ~ "Household head in services",
+      base == "clean_water" ~ "Clean water",
+      base == "own_latrine" ~ "Own latrine",
+      base == "square_latrine" ~ "Latrine type indicator",
+      base == "own_septic_tank" ~ "Own septic tank",
+      base == "electricity_PLN" ~ "PLN electricity connection",
+      base == "logpcexp" ~ "Log per-capita expenditure",
+      base == "hhsize_ln" ~ "Log household size",
+      TRUE ~ base
+    )
+    paste("Baseline:", description,
+          if (grepl("_miss$", variable)) "(missingness flag)" else "(zero-filled value)")
+  }
+  labels <- c(
+    iid = "Woman identifier aligned across survey waves", iid_w4 = "2013 woman identifier",
+    rid_merge = "Household linkage identifier", survey_round = "Survey round; 2 denotes 2013",
+    L07 = "Randomized subdistrict rollout in 2007",
+    pkh_by_this_wave = "Household ever received PKH by this wave",
+    kabupaten = "District", kecamatan = "Subdistrict; randomization and clustering unit",
+    ich02_line = "Pregnancy record number", ich02 = "Pregnancy status/type",
+    ich24 = "Delivery location code", ich25 = "Delivery-attendant response",
+    good_assisted_delivery = "Delivery assisted by a doctor or midwife",
+    delivery_facility = "Delivery at a health facility, authors' coding"
+  )
+  variables <- tibble(Variable = names(dat)) |>
+    mutate(
+      Source = ifelse(Variable %in% c("ich02_line", "ich02", "ich24", "ich25",
+                                      "good_assisted_delivery", "delivery_facility"),
+                      "Wave IV/I_CH.dta", "mothers_fertility_timing.dta"),
+      Role = case_when(
+        Variable %in% c("good_assisted_delivery", "delivery_facility") ~ "Outcome",
+        Variable == "L07" ~ "Instrument",
+        Variable == "pkh_by_this_wave" ~ "Treatment",
+        Variable == "kabupaten" ~ "District adjustment",
+        Variable == "kecamatan" ~ "Cluster identifier",
+        grepl("_baseline_(nm|miss)$", Variable) ~ "Baseline control",
+        TRUE ~ "Linkage, selection, or source field"
+      ),
+      Description = vapply(Variable, function(variable) {
+        if (variable %in% names(labels)) unname(labels[variable]) else describe_control(variable)
+      }, character(1)),
+      Availability = case_when(
+        grepl("_baseline_nm$", Variable) ~ "Available; source values zero-filled where missing",
+        grepl("_baseline_miss$", Variable) ~ "Available; source-missing indicator",
+        TRUE ~ "Available where recorded/applicable"
+      ),
+      Missing_percent = vapply(dat, function(x) round(100 * mean(is.na(x)), 2), numeric(1)),
+      Source_missing_percent = vapply(Variable, function(variable) {
+        if (!grepl("_baseline_nm$", variable)) return("")
+        flag <- dat[[sub("_nm$", "_miss", variable)]]
+        sprintf("%.2f", 100 * mean(is.na(flag) | flag == 1))
+      }, character(1))
+    )
+  knitr::kable(variables, row.names = FALSE)
+})
+```
+
+Sources: supplied `data/README.pdf`, `code/coding/code_master_woman16to49.do`,
+`code/coding/code_master_household_data.do`, and `code/analysis/table2.do`
+within the replication archive. The [published paper](Cahyadi_2020.pdf) provides
+the original outcome definitions and IV comparison.

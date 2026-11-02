@@ -1,0 +1,90 @@
+---
+title: "Minneapolis domestic violence: preprocessing"
+format:
+  html:
+    code-fold: true
+execute:
+  message: false
+---
+
+# Data preparation
+
+Use the supplied ICPSR police file and Angrist's reconstruction program.
+Preserve the original row order: it determines the artificial outcome allocation.
+The raw files remain in `data/`; this document saves only `dat` in
+`processed_data.rda` for [Analysis.qmd](Analysis.qmd).
+
+```{r prepare-data}
+suppressPackageStartupMessages({
+  library(haven)
+  library(dplyr)
+})
+
+dat <- local({
+  raw <- read_dta("data/ICPSR_08250/DS0001/08250-0001-Data.dta")
+  reference <- readLines("data/reference/file1.txt", warn = FALSE)
+  stopifnot(nrow(raw) == 330L, !anyDuplicated(raw$ID),
+            identical(as.numeric(raw$ID), as.numeric(substr(reference, 1, 9))))
+  raw <- filter(raw, T_FINAL != 4)
+
+  # Translate PROC RANK FRACTION and fail_z in data/reference/ReadPolice1b.sas.
+  rank_fraction <- ave(seq_len(nrow(raw)), raw$T_RANDOM,
+                       FUN = function(i) rank(i) / length(i))
+  probability <- plogis(-c(2.11, 1.42, 1.21))[as.integer(raw$T_RANDOM)]
+
+  out <- transmute(
+    raw,
+    ID = as.numeric(ID),
+    fail_z = as.integer(rank_fraction < probability),
+    d_coddled = as.integer(T_FINAL != 1),
+    z_coddled = as.integer(T_RANDOM != 1),
+    y82 = as.integer(YEAR == 82),
+    q1 = as.integer(MONTH %in% 1:3),
+    q2 = as.integer(MONTH %in% 4:6),
+    q3 = as.integer(MONTH %in% 7:9),
+    nonwhite = as.integer(V_RACE != 1),
+    mixed = as.integer(V_RACE != S_RACE),
+    weapon = as.integer(GUNS %in% 2:3 | WEAPON %in% 4:5),
+    chem = as.integer(S_CHEM == 1)
+  )
+  # Retain the original SAS treatment of unknown category codes.
+  stopifnot(nrow(out) == 314L, !anyNA(out), sum(out$fail_z) == 56L,
+            all(out$fail_z %in% 0:1), all(out$d_coddled %in% 0:1), all(out$z_coddled %in% 0:1))
+  out
+})
+save(dat, file = "processed_data.rda", compress = "xz")
+head(dat, 5)
+```
+
+Sixteen incidents with another delivered disposition are excluded. The remaining
+314 incidents have 56 reconstructed events. These are not observed re-arrests.
+The outcome formula and analysis variables are described in `Analysis.qmd`.
+
+Sources: [ICPSR 8250](https://doi.org/10.3886/ICPSR08250.v2), the supplied
+`data/reference/ReadPolice1b.sas`, and
+[Angrist's data archive](https://economics.mit.edu/people/faculty/josh-angrist/angrist-data-archive).
+
+# Variables and availability
+
+The table covers the 314 retained incidents. Missing percentages count `NA`
+values in the saved columns. Derived indicators retain the original SAS handling
+of unknown category codes; zero missingness does not make `fail_z` observed data.
+
+```{r variable-availability}
+local({
+  variables <- tibble(
+    Variable = names(dat),
+    Source = c("ID", "ReadPolice1b.sas", "T_FINAL", "T_RANDOM", "YEAR",
+               "MONTH", "MONTH", "MONTH", "V_RACE", "V_RACE / S_RACE",
+               "GUNS / WEAPON", "S_CHEM"),
+    Role = c("Identifier", "Outcome", "Treatment", "Instrument", rep("Covariate", 8)),
+    Description = c("Incident identifier", "Rank-reconstructed re-arrest",
+      "Delivered non-arrest", "Assigned non-arrest", "Incident in 1982",
+      "First quarter", "Second quarter", "Third quarter", "Non-white victim",
+      "Different victim/suspect race", "Weapon indicator", "Suspect chemical influence"),
+    Availability = c("Available", "Reconstructed, not observed", rep("Derived from police file", 10)),
+    Missing_percent = vapply(dat, function(x) round(100 * mean(is.na(x)), 2), numeric(1))
+  )
+  knitr::kable(variables, row.names = FALSE)
+})
+```

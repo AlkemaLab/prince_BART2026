@@ -1,0 +1,142 @@
+---
+title: "Oregon health insurance: 2SLS and princeBART"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  message: false
+  cache: false
+---
+
+# Study overview
+
+[Finkelstein et al. (2012)](https://doi.org/10.1093/qje/qjs020) used Oregon's
+Medicaid lottery to study insurance coverage. The first-year study found
+increased healthcare use and reduced financial strain, but no statistically
+significant survival improvement. Here lottery selection instruments Medicaid
+enrollment to estimate death-risk effects among enrollment compliers. The
+74,922-person public cohort lacks the required lottery-list household-size
+control, so this is an exploratory public-data comparison, not an exact
+replication. The [paper](Finkelstein_2012.pdf) is retained locally.
+
+# Dataset
+
+```{r load-data}
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ivreg)
+  library(sandwich)
+  library(princeBART)
+  library(future)
+  library(posterior)
+})
+
+load("processed_data.rda")
+head(dat, 5)
+```
+
+- **Outcome (`postn_death`):** death after matched lottery notification during 2008--2009.
+- **Treatment (`ohp_all_ever_matchn_30sep2009`):** any Medicaid enrollment between matched notification and
+  September 30, 2009.
+- **Instrument (`treatment`):** lottery selection.
+- **Covariates:** lottery draw, phone-number provision, PO-box address,
+  self-registration, and signup week. Identifiers are not predictors.
+
+# Objective 1: Death risk among Medicaid-enrollment compliers
+
+## 2SLS analysis
+
+Adjust for the available baseline predictors and cluster standard errors by
+household. The missing household-size adjustment remains an identification
+limitation; the additional predictors do not replace it.
+
+```{r two-stage-least-squares}
+fit_iv <- ivreg(
+  postn_death ~ ohp_all_ever_matchn_30sep2009 + draw_lottery + have_phone_list + pobox_list + self_list + week_list |
+    treatment + draw_lottery + have_phone_list + pobox_list + self_list + week_list,
+  data = dat
+)
+iv_estimate <- unname(coef(fit_iv)["ohp_all_ever_matchn_30sep2009"])
+iv_se <- sqrt(vcovCL(fit_iv, cluster = dat$household_id,
+                     type = "HC1", cadjust = TRUE)["ohp_all_ever_matchn_30sep2009", "ohp_all_ever_matchn_30sep2009"])
+critical <- qnorm(c(0.025, 0.975))
+iv_result <- c(iv_estimate, iv_estimate + critical * iv_se)
+```
+
+## princeBART approach
+
+Use the full cohort, the same predictors, four chains, and four workers.
+Instrument propensity is estimated internally from these covariates. The
+likelihood does not adjust for household clustering, so its credible interval
+does not have the same uncertainty interpretation as the clustered IV interval.
+The full-cohort fit is memory-intensive; no model cache is written.
+
+```{r princebart}
+plan(multisession, workers = 4)
+set.seed(20261102)
+fit_ps <- prince_BART(
+  postn_death ~ draw_lottery + have_phone_list + pobox_list + self_list + week_list | treatment | ohp_all_ever_matchn_30sep2009,
+  data = dat, uptake_type = "binary", n_chains = 4, workers = 4,
+  n_warmup = 500, n_samples = 750, n_trees = 50,
+  keep_trees = FALSE
+)
+plan(sequential)
+
+# Aggregate subjects in blocks to limit additional memory use.
+effect_chains <- lapply(fit_ps$chains, function(chain) {
+  numerator <- denominator <- numeric(nrow(chain$p_a))
+  for (first in seq.int(1L, nrow(dat), by = 5000L)) {
+    subjects <- first:min(first + 4999L, nrow(dat))
+    pc <- 1 - chain$p_a[, subjects, drop = FALSE] - chain$p_n[, subjects, drop = FALSE]
+    delta <- chain$m_y1c[, subjects, drop = FALSE] - chain$m_y0c[, subjects, drop = FALSE]
+    numerator <- numerator + rowSums(pc * delta)
+    denominator <- denominator + rowSums(pc)
+  }
+  numerator / denominator
+})
+tau <- unlist(effect_chains, use.names = FALSE)
+bart_result <- c(mean(tau), quantile(tau, c(0.025, 0.975), names = FALSE))
+effect_draws <- as_draws_array(array(
+  unlist(effect_chains), c(length(effect_chains[[1]]), length(effect_chains), 1),
+  dimnames = list(NULL, NULL, "Complier effect")
+))
+summarise_draws(effect_draws) |> select(variable, rhat, ess_bulk, ess_tail)
+```
+
+## Comparison
+
+Effects are **percentage-point changes in death risk**. Table IX reports a
+survival LATE of 0.0013 (SE 0.0027); reverse its sign for death. Its CI below
+uses the rounded published SE. The public-file mortality window and adjustment
+set differ from the paper, so agreement should not be expected.
+
+```{r comparison}
+paper_result <- c(-0.0013, -0.0013 + critical * 0.0027)
+comparison <- tibble(
+  Method = c("Published LATE: converted to death", "Public-data 2SLS",
+             "princeBART: mixed complier effect"),
+  Estimate_pp = 100 * c(paper_result[1], iv_result[1], bart_result[1]),
+  Lower_pp = 100 * c(paper_result[2], iv_result[2], bart_result[2]),
+  Upper_pp = 100 * c(paper_result[3], iv_result[3], bart_result[3]),
+  Interval = c("95% CI (reconstructed)", "95% clustered CI", "95% CrI")
+)
+comparison
+```
+
+## Effect heterogeneity
+
+Summarize fitted effects with a shallow tree using the available baseline
+covariates. Mortality is rare and follow-up varies by draw; these segments
+are descriptive summaries, not confirmed differences in treatment effects.
+
+```{r heterogeneity}
+segments <- segment_heterogeneity(
+  fit_ps,
+  rpart_control = rpart::rpart.control(cp = 0, maxdepth = 2),
+  min_compliers_bucket = 1000, ci_level = 0.95, plot = TRUE
+)
+as_tibble(segments$effects) |>
+  select(segment, mean, ci_lower, ci_upper, n, n_group)
+segments$plot$effect
+```
