@@ -59,6 +59,46 @@ Fix coefficients and settings for \code{\link[=ps_sim_data]{ps_sim_data()}}. Ran
 the caller's RNG; \code{seed} controls subsequent data generation only.
 }
 \details{
+\code{\link[=ps_sim_data]{ps_sim_data()}} uses this setup to generate independent subjects.
+For each subject \eqn{i}, draw independent baseline predictors and an
+unobserved variable:
+\deqn{X_{1ij} \sim N(m_j, v_j), \qquad
+      X_{2ik} \sim \mathrm{Bernoulli}(p_k), \qquad U_i \sim N(0,1).}
+Here \eqn{m_j}, \eqn{v_j}, and \eqn{p_k} are \code{x1_mean}, \code{x1_var}, and
+\code{x2_p}. Let \eqn{\widetilde X_i = (1, f(X_{1i})^\top, X_{2i}^\top)^\top},
+where \code{x1_transform} is \eqn{f}, applied elementwise. All regressions below
+use these transformed predictors; \code{\link[=ps_sim_data]{ps_sim_data()}} retains the original X1
+in its \code{data} output.
+
+The principal stratum \eqn{G_i=(W_i(0),W_i(1))} specifies uptake under each
+instrument assignment. For \eqn{g=(a,b)}, let \eqn{s_g} be
+\code{stratum_weights[a + 1, b + 1]} and \eqn{\mathcal G} contain pairs with
+positive weight. Draw stratum, assignment, and observed uptake as follows:
+\deqn{\begin{aligned}
+P(G_i=g\mid X_i,U_i)
+&= \frac{s_g\exp(\widetilde X_i^\top\alpha_g+\gamma_g U_i)}
+{\sum_{h\in\mathcal G}s_h\exp(\widetilde X_i^\top\alpha_h+\gamma_h U_i)},\\
+Z_i\mid X_i &\sim \mathrm{Bernoulli}\{\mathrm{expit}(\widetilde X_i^\top\beta)\},\\
+W_i &= (1-Z_i)W_i(0)+Z_iW_i(1).
+\end{aligned}}
+Zero weights exclude strata; positive weights set their relative mass
+before covariate effects. Uptake levels are \eqn{0,\ldots,K-1}, with
+\eqn{K}= \code{w_levels}. The shared \eqn{U_i} can affect strata and outcomes,
+but assignment depends only on observed covariates.
+
+Define the outcome score
+\eqn{\ell_i=\widetilde X_i^\top\theta_{G_i}+\delta_{G_i}U_i+\tau_{G_i}W_i}.
+Conditional on covariates, stratum, and uptake, generate
+\deqn{Y_i \sim \begin{cases}
+\mathrm{Bernoulli}\{\mathrm{expit}(\ell_i)\}, & \text{binary outcome},\\
+N(\ell_i,\sigma_y^2), & \text{continuous outcome}.
+\end{cases}}
+Here \eqn{\mathrm{expit}(t)=1/(1+\exp(-t))}. Coefficient blocks \verb{g_*},
+\verb{z_*}, and \verb{y_*} define the stratum, assignment, and outcome models;
+\code{g_u} and \code{y_u} multiply U, and \code{y_w} is \eqn{\tau_g}.
+For binary outcomes, \code{y_w} is a log-odds coefficient, not a probability
+difference; for continuous outcomes it changes the mean per uptake unit.
+
 Coefficient blocks (K = \code{w_levels}) are \code{g_intercept}, \code{g_u}, \code{y_intercept},
 \code{y_u}, \code{y_w} (K by K); \code{g_x1}, \code{y_x1} (\code{nx1} by K by K); \code{g_x2}, \code{y_x2}
 (\code{nx2} by K by K); \code{z_intercept} (scalar); \code{z_x1} (length \code{nx1}); and \code{z_x2}

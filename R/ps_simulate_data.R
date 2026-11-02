@@ -22,7 +22,48 @@
 #'   matrix with positive total weight. Rows index W(0), columns W(1).
 #'   Zeros exclude strata; positive entries set relative weights.
 #'
+#' @md
 #' @details
+#' [ps_sim_data()] uses this setup to generate independent subjects.
+#' For each subject \eqn{i}, draw independent baseline predictors and an
+#' unobserved variable:
+#' \deqn{X_{1ij} \sim N(m_j, v_j), \qquad
+#'       X_{2ik} \sim \mathrm{Bernoulli}(p_k), \qquad U_i \sim N(0,1).}
+#' Here \eqn{m_j}, \eqn{v_j}, and \eqn{p_k} are `x1_mean`, `x1_var`, and
+#' `x2_p`. Let \eqn{\widetilde X_i = (1, f(X_{1i})^\top, X_{2i}^\top)^\top},
+#' where `x1_transform` is \eqn{f}, applied elementwise. All regressions below
+#' use these transformed predictors; [ps_sim_data()] retains the original X1
+#' in its `data` output.
+#'
+#' The principal stratum \eqn{G_i=(W_i(0),W_i(1))} specifies uptake under each
+#' instrument assignment. For \eqn{g=(a,b)}, let \eqn{s_g} be
+#' `stratum_weights[a + 1, b + 1]` and \eqn{\mathcal G} contain pairs with
+#' positive weight. Draw stratum, assignment, and observed uptake as follows:
+#' \deqn{\begin{aligned}
+#' P(G_i=g\mid X_i,U_i)
+#' &= \frac{s_g\exp(\widetilde X_i^\top\alpha_g+\gamma_g U_i)}
+#' {\sum_{h\in\mathcal G}s_h\exp(\widetilde X_i^\top\alpha_h+\gamma_h U_i)},\\
+#' Z_i\mid X_i &\sim \mathrm{Bernoulli}\{\mathrm{expit}(\widetilde X_i^\top\beta)\},\\
+#' W_i &= (1-Z_i)W_i(0)+Z_iW_i(1).
+#' \end{aligned}}
+#' Zero weights exclude strata; positive weights set their relative mass
+#' before covariate effects. Uptake levels are \eqn{0,\ldots,K-1}, with
+#' \eqn{K}= `w_levels`. The shared \eqn{U_i} can affect strata and outcomes,
+#' but assignment depends only on observed covariates.
+#'
+#' Define the outcome score
+#' \eqn{\ell_i=\widetilde X_i^\top\theta_{G_i}+\delta_{G_i}U_i+\tau_{G_i}W_i}.
+#' Conditional on covariates, stratum, and uptake, generate
+#' \deqn{Y_i \sim \begin{cases}
+#' \mathrm{Bernoulli}\{\mathrm{expit}(\ell_i)\}, & \text{binary outcome},\\
+#' N(\ell_i,\sigma_y^2), & \text{continuous outcome}.
+#' \end{cases}}
+#' Here \eqn{\mathrm{expit}(t)=1/(1+\exp(-t))}. Coefficient blocks `g_*`,
+#' `z_*`, and `y_*` define the stratum, assignment, and outcome models;
+#' `g_u` and `y_u` multiply U, and `y_w` is \eqn{\tau_g}.
+#' For binary outcomes, `y_w` is a log-odds coefficient, not a probability
+#' difference; for continuous outcomes it changes the mean per uptake unit.
+#'
 #' Coefficient blocks (K = `w_levels`) are `g_intercept`, `g_u`, `y_intercept`,
 #' `y_u`, `y_w` (K by K); `g_x1`, `y_x1` (`nx1` by K by K); `g_x2`, `y_x2`
 #' (`nx2` by K by K); `z_intercept` (scalar); `z_x1` (length `nx1`); and `z_x2`
@@ -59,12 +100,10 @@ ps_sim_setup <- function(n = 100L, nx1 = 1L, nx2 = 1L, w_levels = 2L,
 #' @param ... Arguments to [ps_sim_setup()] when `setup = NULL`. When supplying
 #'   a setup, edit its fields directly instead of passing additional arguments.
 #'
+#' @md
 #' @details
-#' Stratum probabilities are proportional to stratum weights times exponentiated
-#' linear scores. Instrument assignment uses a logistic model of transformed
-#' covariates. Outcomes depend on covariates, an unobserved N(0,1) variable,
-#' stratum, and received uptake, using a logistic link for binary outcomes or
-#' an identity link for continuous outcomes.
+#' See [ps_sim_setup()] for the data-generating equations, coefficient blocks,
+#' and principal-stratum support. Reusing a setup preserves its coefficients.
 #'
 #' @return A list containing `data` (observed covariates, Z, W, Y), `alldata`
 #'   (also transformed predictors, G, U, W0, W1, propensity, mean_y0, mean_y1),

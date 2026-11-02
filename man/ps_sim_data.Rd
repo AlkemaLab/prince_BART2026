@@ -23,11 +23,8 @@ conditional outcome means under assignment Z = 0 and Z = 1.
 Generate observed and latent data using fixed coefficients from \code{\link[=ps_sim_setup]{ps_sim_setup()}}.
 }
 \details{
-Stratum probabilities are proportional to stratum weights times exponentiated
-linear scores. Instrument assignment uses a logistic model of transformed
-covariates. Outcomes depend on covariates, an unobserved N(0,1) variable,
-stratum, and received uptake, using a logistic link for binary outcomes or
-an identity link for continuous outcomes.
+See \code{\link[=ps_sim_setup]{ps_sim_setup()}} for the data-generating equations, coefficient blocks,
+and principal-stratum support. Reusing a setup preserves its coefficients.
 }
 \examples{
 sim <- ps_sim_data(n = 100, coefficients = 0, seed = 42)
