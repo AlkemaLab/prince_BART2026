@@ -190,31 +190,46 @@ strength.
 
 ## Segment heterogeneity
 
-Segment heterogeneity means that treatment effects differ across
-covariate-defined subpopulations. Here two populations have different X1
-distributions and share all coefficients except the complier treatment
-coefficient: -3 in the lower-mean population and +3 in the higher-mean
-population. These coefficients are on the log-odds scale, not ATEs.
-Combine the populations and fit the model without population labels.
+The two populations share the same X1 distribution. X2 is always 0 in
+`sim1` and always 1 in `sim2`. They share all coefficients except the
+complier treatment coefficient: -3 for X2 = 0 and +3 for X2 = 1. These
+are log-odds coefficients; the probability-scale effects also depend on
+the baseline outcome model. The model receives X1 and X2 and must learn
+the split itself.
 
 ```{r heterogeneity-data}
+set.seed(100) # Fix the shared coefficients independently of earlier fits.
 sim1 <- ps_sim_setup(
-  n = 600, x1_mean = -2, x1_var = 0.5,
+  n = 600, x1_mean = 0, x1_var = 0.5, x2_p = 0,
   seed = 101,
   stratum_weights = matrix(c(1, 0, 8, 1), 2, 2)
 )
-sim1$coefficients$y_w[1, 2] <- 3
+sim1$coefficients$y_w[1, 2] <- -3
 
 sim2 <- sim1
-sim2$x1_mean <- 2
+sim2$x2_p <- 1
 sim2$seed <- 102
-sim1$coefficients$y_w[1, 2] <- -3
+sim2$coefficients$y_w[1, 2] <- 3
 
 simdata1 <- ps_sim_data(sim1)
 simdata2 <- ps_sim_data(sim2)
 
 data_combined <- rbind(simdata1$data, simdata2$data)
+```
 
+Approximate each population's true complier effect using a large
+reference simulation from its setup. Average the known conditional mean
+differences among true compliers; no fitted model enters this Monte
+Carlo reference.
+
+```{r heterogeneity-truth}
+segment_truth <- vapply(list(sim1, sim2), function(setup) {
+  setup$n <- 100000L
+  setup$seed <- 104
+  reference <- ps_sim_data(setup)$alldata
+  with(reference, mean((mean_y1 - mean_y0)[W0 == 0 & W1 == 1]))
+}, numeric(1))
+names(segment_truth) <- c("0", "1")
 ```
 
 ```{r heterogeneity-fit}
@@ -229,8 +244,10 @@ fit_sh <- prince_BART(
 ```
 
 Fit a tree with at most two leaves, allowing it to choose between X1 and
-X2. The plot summarizes estimated effects within the learned segments;
-it does not establish exact recovery of the generating populations.
+X2. The cross-tabulation checks group recovery. For segments containing
+only one X2 value, compare the posterior effect and 95% credible
+interval with that population's simulation truth. A mixed segment has no
+matched group truth and is marked `NA`.
 
 ```{r heterogeneity}
 res <- segment_heterogeneity(
@@ -240,7 +257,26 @@ res <- segment_heterogeneity(
   plot = TRUE, contrast = TRUE
 )
 
-res$plot$effect
+recovery <- table(X2 = data_combined$x2_1, Segment = res$segment_data$segment)
+recovery
+cat("Both X2 groups recovered:",
+    ncol(recovery) == 2L && all(colSums(recovery > 0) == 1L), "\n")
+
+effects <- res$effects[res$effects$segment != "overall", ]
+x2_group <- vapply(effects$segment, function(segment) {
+  values <- unique(data_combined$x2_1[res$segment_data$segment == segment])
+  if (length(values) == 1L) values else NA_real_
+}, numeric(1))
+comparison <- data.frame(
+  Segment = effects$segment, X2 = x2_group,
+  Truth_MC = unname(segment_truth[as.character(x2_group)]),
+  Estimate = effects$mean, Lower = effects$ci_lower, Upper = effects$ci_upper
+)
+comparison$Truth_in_interval <- with(comparison, Truth_MC >= Lower & Truth_MC <= Upper)
+knitr::kable(comparison, digits = 3)
+res$plot$effect +
+  ggplot2::geom_vline(xintercept = unname(segment_truth), linetype = 2) +
+  ggplot2::labs(caption = "Dashed lines: population complier effects from the simulation setups.")
 ```
 
 ```{r heterogeneity-contrast}
@@ -251,9 +287,9 @@ res$plot$diff
 ## Generalizing to a target population
 
 Reuse the source fit above, whose trees were saved with
-`keep_trees = TRUE`. Now draw 80% of the target from the lower-mean X1
-population and 20% from the higher-mean X1 population, rather than the
-source's 50/50 mix. Each population keeps its simulation setup, and both
+`keep_trees = TRUE`. Now draw 80% of the target from the X2 = 0
+population and 20% from the X2 = 1 population, rather than the source's
+50/50 mix. Each population keeps its simulation setup, and both
 covariate distributions are represented in the source.
 
 ```{r target-data}
@@ -309,11 +345,10 @@ transport_comparison <- data.frame(
 knitr::kable(transport_comparison, digits = 3)
 ```
 
-The changed population mix can change the average effect. Generalization
-requires stable conditional complier effects and covariate overlap.
-Where the two populations overlap, changing their mix can also change
-the effect at a given X, so exact transportability is not guaranteed in
-this example. See `?general_BART` for survey weights and target
+Changing the X2 mix changes the target covariate distribution while
+preserving the conditional simulation models. Both X2 values occur in
+the source. Generalization requires stable conditional complier effects
+and covariate overlap. See `?general_BART` for survey weights and target
 subpopulations.
 
 ## Count and ordinal uptake

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="princeBART authors">
-<meta name="dcterms.date" content="2026-10-20">
+<meta name="dcterms.date" content="2026-11-02">
 
 <title>Introduction to princeBART</title>
 <style>
@@ -149,7 +149,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 20, 2026</p>
+      <p class="date">November 2, 2026</p>
     </div>
   </div>
   
@@ -270,28 +270,28 @@ Y\mid X,U,G,W &amp;\sim \mathrm{Bernoulli}\{
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; =====================================================</span></span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Principal Strata Distribution:</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        variable      mean    median         sd        mad        q5       q95</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1     compliers 0.1843701 0.1841383 0.03385186 0.03410724 0.1290881 0.2403931</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  never-takers 0.1245073 0.1241796 0.01528333 0.01544854 0.1000868 0.1502775</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 always-takers 0.6911226 0.6917762 0.03123126 0.03238778 0.6402392 0.7426044</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        variable      mean    median         sd        mad         q5       q95</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1     compliers 0.1841569 0.1842059 0.03348219 0.03435619 0.12906454 0.2387539</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  never-takers 0.1236414 0.1231910 0.01526135 0.01535347 0.09886501 0.1494172</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 always-takers 0.6922018 0.6919418 0.03069129 0.03050993 0.64178561 0.7430098</span></span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       rhat ess_bulk  ess_tail</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 1.024700 200.2481  547.8444</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 1.007672 672.8593 1584.5645</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 1.022278 210.3870  530.4252</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 1.010749 223.1143  423.8690</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 1.005850 600.6785 1856.8340</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 1.007718 270.3662  547.4349</span></span>
 <span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Mixed ATE for Compliers:</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                  variable       mean     median         sd        mad</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1        Y(0) | compliers 0.64286639 0.64336339 0.11847683 0.12072806</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2        Y(1) | compliers 0.65906250 0.66065202 0.11562643 0.11449938</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     Y(0) | never-takers 0.54102689 0.54169263 0.06569263 0.06608536</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4    Y(1) | always-takers 0.80348259 0.80411888 0.02372756 0.02371125</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 Mixed ATE for compliers 0.01619611 0.02008862 0.16971569 0.17323952</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                  variable        mean      median         sd        mad</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1        Y(0) | compliers  0.64214316  0.64343560 0.11564953 0.11805101</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2        Y(1) | compliers  0.62371119  0.62979692 0.12333564 0.11553165</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     Y(0) | never-takers  0.54094200  0.54323799 0.06361649 0.06288094</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4    Y(1) | always-takers  0.80938080  0.81015484 0.02393912 0.02377839</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 Mixed ATE for compliers -0.01843197 -0.01080168 0.17603896 0.17216859</span></span>
 <span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           q5       q95     rhat ess_bulk  ess_tail</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1  0.4437811 0.8348539 1.008240 590.3707  926.7574</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  0.4654768 0.8449582 1.017065 259.0061  545.0494</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  0.4304041 0.6482708 1.008030 573.0966 1622.5723</span></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  0.7639577 0.8423252 1.013894 363.2815  833.6334</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 -0.2672209 0.2877487 1.019482 307.5163  602.7374</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1  0.4513988 0.8328151 1.004152 747.9988 1013.7548</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  0.4063892 0.8185109 1.016979 195.5149  386.4644</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  0.4345827 0.6419575 1.002077 939.4162 1771.7070</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  0.7687105 0.8476653 1.010884 242.6821  804.0651</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 -0.3162614 0.2617772 1.010870 232.5831  522.0651</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The default summary reports mixed average effects for compliers. Other estimands are available through <code>extract()</code>, for example <code>extract(fit, "sate_c")</code> for sample effects; see <code>?extract</code> for definitions. The simulation supplies a reference by averaging conditional mean differences among the true compliers:</p>
 <div class="cell">
@@ -346,9 +346,9 @@ Y\mid X,U,G,W &amp;\sim \mathrm{Bernoulli}\{
 </tr>
 <tr class="even">
 <td style="text-align: left;">princeBART: mixed complier effect</td>
-<td style="text-align: right;">0.016</td>
-<td style="text-align: right;">-0.325</td>
-<td style="text-align: right;">0.337</td>
+<td style="text-align: right;">-0.018</td>
+<td style="text-align: right;">-0.387</td>
+<td style="text-align: right;">0.307</td>
 <td style="text-align: left;">95% credible</td>
 </tr>
 <tr class="odd">
@@ -366,45 +366,128 @@ Y\mid X,U,G,W &amp;\sim \mathrm{Bernoulli}\{
 </section>
 <section id="segment-heterogeneity" class="level2">
 <h2 class="anchored" data-anchor-id="segment-heterogeneity">Segment heterogeneity</h2>
-<p>Segment heterogeneity means that treatment effects differ across covariate-defined subpopulations. Here two populations have different X1 distributions and share all coefficients except the complier treatment coefficient: -3 in the lower-mean population and +3 in the higher-mean population. These coefficients are on the log-odds scale, not ATEs. Combine the populations and fit the model without population labels.</p>
+<p>The two populations share the same X1 distribution. X2 is always 0 in <code>sim1</code> and always 1 in <code>sim2</code>. They share all coefficients except the complier treatment coefficient: -3 for X2 = 0 and +3 for X2 = 1. These are log-odds coefficients; the probability-scale effects also depend on the baseline outcome model. The model receives X1 and X2 and must learn the split itself.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>sim1 <span class="ot">&lt;-</span> <span class="fu">ps_sim_setup</span>(</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">n =</span> <span class="dv">600</span>, <span class="at">x1_mean =</span> <span class="sc">-</span><span class="dv">2</span>, <span class="at">x1_var =</span> <span class="fl">0.5</span>,</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">101</span>,</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">stratum_weights =</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">8</span>, <span class="dv">1</span>), <span class="dv">2</span>, <span class="dv">2</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>sim1<span class="sc">$</span>coefficients<span class="sc">$</span>y_w[<span class="dv">1</span>, <span class="dv">2</span>] <span class="ot">&lt;-</span> <span class="dv">3</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>sim2 <span class="ot">&lt;-</span> sim1</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>sim2<span class="sc">$</span>x1_mean <span class="ot">&lt;-</span> <span class="dv">2</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>sim2<span class="sc">$</span>seed <span class="ot">&lt;-</span> <span class="dv">102</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>sim1<span class="sc">$</span>coefficients<span class="sc">$</span>y_w[<span class="dv">1</span>, <span class="dv">2</span>] <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">3</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>simdata1 <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(sim1)</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>simdata2 <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(sim2)</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>data_combined <span class="ot">&lt;-</span> <span class="fu">rbind</span>(simdata1<span class="sc">$</span>data, simdata2<span class="sc">$</span>data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>) <span class="co"># Fix the shared coefficients independently of earlier fits.</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>sim1 <span class="ot">&lt;-</span> <span class="fu">ps_sim_setup</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">n =</span> <span class="dv">600</span>, <span class="at">x1_mean =</span> <span class="dv">0</span>, <span class="at">x1_var =</span> <span class="fl">0.5</span>, <span class="at">x2_p =</span> <span class="dv">0</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">101</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">stratum_weights =</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">8</span>, <span class="dv">1</span>), <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>sim1<span class="sc">$</span>coefficients<span class="sc">$</span>y_w[<span class="dv">1</span>, <span class="dv">2</span>] <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">3</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>sim2 <span class="ot">&lt;-</span> sim1</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>sim2<span class="sc">$</span>x2_p <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>sim2<span class="sc">$</span>seed <span class="ot">&lt;-</span> <span class="dv">102</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>sim2<span class="sc">$</span>coefficients<span class="sc">$</span>y_w[<span class="dv">1</span>, <span class="dv">2</span>] <span class="ot">&lt;-</span> <span class="dv">3</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>simdata1 <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(sim1)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>simdata2 <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(sim2)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>data_combined <span class="ot">&lt;-</span> <span class="fu">rbind</span>(simdata1<span class="sc">$</span>data, simdata2<span class="sc">$</span>data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Approximate each population’s true complier effect using a large reference simulation from its setup. Average the known conditional mean differences among true compliers; no fitted model enters this Monte Carlo reference.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>segment_truth <span class="ot">&lt;-</span> <span class="fu">vapply</span>(<span class="fu">list</span>(sim1, sim2), <span class="cf">function</span>(setup) {</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  setup<span class="sc">$</span>n <span class="ot">&lt;-</span> <span class="dv">100000</span>L</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  setup<span class="sc">$</span>seed <span class="ot">&lt;-</span> <span class="dv">104</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  reference <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(setup)<span class="sc">$</span>alldata</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">with</span>(reference, <span class="fu">mean</span>((mean_y1 <span class="sc">-</span> mean_y0)[W0 <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> W1 <span class="sc">==</span> <span class="dv">1</span>]))</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>}, <span class="fu">numeric</span>(<span class="dv">1</span>))</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(segment_truth) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"0"</span>, <span class="st">"1"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">103</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>fit_sh <span class="ot">&lt;-</span> <span class="fu">prince_BART</span>(</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> x1_1 <span class="sc">+</span> x2_1 <span class="sc">|</span> Z <span class="sc">|</span> W,</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> data_combined,</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">propensity =</span> <span class="fu">c</span>(simdata1<span class="sc">$</span>alldata<span class="sc">$</span>propensity, simdata2<span class="sc">$</span>alldata<span class="sc">$</span>propensity),</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_chains =</span> <span class="dv">4</span>, <span class="at">n_warmup =</span> <span class="dv">500</span>, <span class="at">n_samples =</span> <span class="dv">1000</span>,</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_trees =</span> <span class="dv">50</span>, <span class="at">keep_trees =</span> <span class="cn">TRUE</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">103</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>fit_sh <span class="ot">&lt;-</span> <span class="fu">prince_BART</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> x1_1 <span class="sc">+</span> x2_1 <span class="sc">|</span> Z <span class="sc">|</span> W,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> data_combined,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">propensity =</span> <span class="fu">c</span>(simdata1<span class="sc">$</span>alldata<span class="sc">$</span>propensity, simdata2<span class="sc">$</span>alldata<span class="sc">$</span>propensity),</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_chains =</span> <span class="dv">4</span>, <span class="at">n_warmup =</span> <span class="dv">500</span>, <span class="at">n_samples =</span> <span class="dv">1000</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_trees =</span> <span class="dv">50</span>, <span class="at">keep_trees =</span> <span class="cn">TRUE</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Fit a tree with at most two leaves, allowing it to choose between X1 and X2. The plot summarizes estimated effects within the learned segments; it does not establish exact recovery of the generating populations.</p>
+<p>Fit a tree with at most two leaves, allowing it to choose between X1 and X2. The cross-tabulation checks group recovery. For segments containing only one X2 value, compare the posterior effect and 95% credible interval with that population’s simulation truth. A mixed segment has no matched group truth and is marked <code>NA</code>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">segment_heterogeneity</span>(</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  fit_sh,</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">rpart_control =</span> rpart<span class="sc">::</span><span class="fu">rpart.control</span>(<span class="at">cp =</span> <span class="dv">0</span>, <span class="at">maxdepth =</span> <span class="dv">1</span>),</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">min_compliers_bucket =</span> <span class="dv">100</span>, <span class="at">ci_level =</span> <span class="fl">0.95</span>,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">plot =</span> <span class="cn">TRUE</span>, <span class="at">contrast =</span> <span class="cn">TRUE</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>plot<span class="sc">$</span>effect</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">segment_heterogeneity</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  fit_sh,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">rpart_control =</span> rpart<span class="sc">::</span><span class="fu">rpart.control</span>(<span class="at">cp =</span> <span class="dv">0</span>, <span class="at">maxdepth =</span> <span class="dv">1</span>),</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">min_compliers_bucket =</span> <span class="dv">100</span>, <span class="at">ci_level =</span> <span class="fl">0.95</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">plot =</span> <span class="cn">TRUE</span>, <span class="at">contrast =</span> <span class="cn">TRUE</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>recovery <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">X2 =</span> data_combined<span class="sc">$</span>x2_1, <span class="at">Segment =</span> res<span class="sc">$</span>segment_data<span class="sc">$</span>segment)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>recovery</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Segment</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; X2  not x2_1 x2_1</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   0      600    0</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   1        0  600</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Both X2 groups recovered:"</span>,</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ncol</span>(recovery) <span class="sc">==</span> <span class="dv">2</span>L <span class="sc">&amp;&amp;</span> <span class="fu">all</span>(<span class="fu">colSums</span>(recovery <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">==</span> <span class="dv">1</span>L), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Both X2 groups recovered: TRUE</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>effects <span class="ot">&lt;-</span> res<span class="sc">$</span>effects[res<span class="sc">$</span>effects<span class="sc">$</span>segment <span class="sc">!=</span> <span class="st">"overall"</span>, ]</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>x2_group <span class="ot">&lt;-</span> <span class="fu">vapply</span>(effects<span class="sc">$</span>segment, <span class="cf">function</span>(segment) {</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  values <span class="ot">&lt;-</span> <span class="fu">unique</span>(data_combined<span class="sc">$</span>x2_1[res<span class="sc">$</span>segment_data<span class="sc">$</span>segment <span class="sc">==</span> segment])</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(values) <span class="sc">==</span> <span class="dv">1</span>L) values <span class="cf">else</span> <span class="cn">NA_real_</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>}, <span class="fu">numeric</span>(<span class="dv">1</span>))</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">Segment =</span> effects<span class="sc">$</span>segment, <span class="at">X2 =</span> x2_group,</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">Truth_MC =</span> <span class="fu">unname</span>(segment_truth[<span class="fu">as.character</span>(x2_group)]),</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">Estimate =</span> effects<span class="sc">$</span>mean, <span class="at">Lower =</span> effects<span class="sc">$</span>ci_lower, <span class="at">Upper =</span> effects<span class="sc">$</span>ci_upper</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>comparison<span class="sc">$</span>Truth_in_interval <span class="ot">&lt;-</span> <span class="fu">with</span>(comparison, Truth_MC <span class="sc">&gt;=</span> Lower <span class="sc">&amp;</span> Truth_MC <span class="sc">&lt;=</span> Upper)</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(comparison, <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 4%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: left;">Segment</th>
+<th style="text-align: right;">X2</th>
+<th style="text-align: right;">Truth_MC</th>
+<th style="text-align: right;">Estimate</th>
+<th style="text-align: right;">Lower</th>
+<th style="text-align: right;">Upper</th>
+<th style="text-align: left;">Truth_in_interval</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">not x2_1</td>
+<td style="text-align: left;">not x2_1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-0.586</td>
+<td style="text-align: right;">-0.554</td>
+<td style="text-align: right;">-0.654</td>
+<td style="text-align: right;">-0.443</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">x2_1</td>
+<td style="text-align: left;">x2_1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.241</td>
+<td style="text-align: right;">0.192</td>
+<td style="text-align: right;">0.111</td>
+<td style="text-align: right;">0.260</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>plot<span class="sc">$</span>effect <span class="sc">+</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fu">unname</span>(segment_truth), <span class="at">linetype =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">labs</span>(<span class="at">caption =</span> <span class="st">"Dashed lines: population complier effects from the simulation setups."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -414,10 +497,10 @@ Y\mid X,U,G,W &amp;\sim \mathrm{Bernoulli}\{
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>contrast<span class="sc">$</span>summary</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       mean        sd ci_lower ci_upper p_gt0</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 0.695187 0.1959686  0.33373 1.075726     1</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>plot<span class="sc">$</span>diff</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>contrast<span class="sc">$</span>summary</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        mean         sd  ci_lower  ci_upper p_gt0</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 0.7465464 0.06407866 0.6161104 0.8654216     1</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>res<span class="sc">$</span>plot<span class="sc">$</span>diff</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -429,18 +512,18 @@ Y\mid X,U,G,W &amp;\sim \mathrm{Bernoulli}\{
 </section>
 <section id="generalizing-to-a-target-population" class="level2">
 <h2 class="anchored" data-anchor-id="generalizing-to-a-target-population">Generalizing to a target population</h2>
-<p>Reuse the source fit above, whose trees were saved with <code>keep_trees = TRUE</code>. Now draw 80% of the target from the lower-mean X1 population and 20% from the higher-mean X1 population, rather than the source’s 50/50 mix. Each population keeps its simulation setup, and both covariate distributions are represented in the source.</p>
+<p>Reuse the source fit above, whose trees were saved with <code>keep_trees = TRUE</code>. Now draw 80% of the target from the X2 = 0 population and 20% from the X2 = 1 population, rather than the source’s 50/50 mix. Each population keeps its simulation setup, and both covariate distributions are represented in the source.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>target_low <span class="ot">&lt;-</span> sim1</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>target_low<span class="sc">$</span>n <span class="ot">&lt;-</span> <span class="dv">800</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>target_low<span class="sc">$</span>seed <span class="ot">&lt;-</span> <span class="dv">201</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>target_high <span class="ot">&lt;-</span> sim2</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>target_high<span class="sc">$</span>n <span class="ot">&lt;-</span> <span class="dv">200</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>target_high<span class="sc">$</span>seed <span class="ot">&lt;-</span> <span class="dv">202</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>sim_target_low <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(target_low)</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>sim_target_high <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(target_high)</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>target_data <span class="ot">&lt;-</span> <span class="fu">rbind</span>(sim_target_low<span class="sc">$</span>data, sim_target_high<span class="sc">$</span>data)</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>target_covariates <span class="ot">&lt;-</span> target_data[<span class="fu">c</span>(<span class="st">"x1_1"</span>, <span class="st">"x2_1"</span>)]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>target_low <span class="ot">&lt;-</span> sim1</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>target_low<span class="sc">$</span>n <span class="ot">&lt;-</span> <span class="dv">800</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>target_low<span class="sc">$</span>seed <span class="ot">&lt;-</span> <span class="dv">201</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>target_high <span class="ot">&lt;-</span> sim2</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>target_high<span class="sc">$</span>n <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>target_high<span class="sc">$</span>seed <span class="ot">&lt;-</span> <span class="dv">202</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>sim_target_low <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(target_low)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>sim_target_high <span class="ot">&lt;-</span> <span class="fu">ps_sim_data</span>(target_high)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>target_data <span class="ot">&lt;-</span> <span class="fu">rbind</span>(sim_target_low<span class="sc">$</span>data, sim_target_high<span class="sc">$</span>data)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>target_covariates <span class="ot">&lt;-</span> target_data[<span class="fu">c</span>(<span class="st">"x1_1"</span>, <span class="st">"x2_1"</span>)]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>general_BART()</code> averages the predicted complier effect curve over the target covariates:</p>
 <p><span class="math display">\[
@@ -448,27 +531,27 @@ Y\mid X,U,G,W &amp;\sim \mathrm{Bernoulli}\{
 \]</span></p>
 <p>The references below average known conditional outcome-mean differences among the simulated compliers. Complier membership depends on covariates in this simulation, so these references use different weighting from <code>general_BART()</code> and need not agree with it. Only target covariates enter prediction; target outcomes and true strata are used only for simulation checks. With no survey weights supplied, target units receive equal weight; the 95% credible interval incorporates a Bayesian bootstrap over units.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>transported <span class="ot">&lt;-</span> <span class="fu">general_BART</span>(</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">princebart_fit =</span> fit_sh,</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">newdata =</span> target_covariates,</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">203</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulation references: average conditional mean differences among true compliers.</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>source_reference <span class="ot">&lt;-</span> <span class="fu">with</span>(<span class="fu">rbind</span>(simdata1<span class="sc">$</span>alldata, simdata2<span class="sc">$</span>alldata),</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>((mean_y1 <span class="sc">-</span> mean_y0)[W0 <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> W1 <span class="sc">==</span> <span class="dv">1</span>]))</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>target_reference <span class="ot">&lt;-</span> <span class="fu">with</span>(<span class="fu">rbind</span>(sim_target_low<span class="sc">$</span>alldata, sim_target_high<span class="sc">$</span>alldata),</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>((mean_y1 <span class="sc">-</span> mean_y0)[W0 <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> W1 <span class="sc">==</span> <span class="dv">1</span>]))</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>source_draws <span class="ot">&lt;-</span> <span class="fu">mixed_effect_draws</span>(fit_sh)</span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>source_ci <span class="ot">&lt;-</span> <span class="fu">quantile</span>(source_draws, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>transport_comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">Method =</span> <span class="fu">c</span>(<span class="st">"Source: simulated compliers"</span>, <span class="st">"Source: princeBART mixed effect"</span>,</span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>             <span class="st">"Target: simulated compliers"</span>, <span class="st">"Target: general_BART"</span>),</span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">Estimate =</span> <span class="fu">c</span>(source_reference, <span class="fu">mean</span>(source_draws), target_reference, transported<span class="sc">$</span>pate),</span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">Lower =</span> <span class="fu">c</span>(<span class="cn">NA</span>, source_ci[<span class="dv">1</span>], <span class="cn">NA</span>, transported<span class="sc">$</span>ci[<span class="dv">1</span>]),</span>
-<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">Upper =</span> <span class="fu">c</span>(<span class="cn">NA</span>, source_ci[<span class="dv">2</span>], <span class="cn">NA</span>, transported<span class="sc">$</span>ci[<span class="dv">2</span>])</span>
-<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(transport_comparison, <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>transported <span class="ot">&lt;-</span> <span class="fu">general_BART</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">princebart_fit =</span> fit_sh,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">newdata =</span> target_covariates,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">203</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulation references: average conditional mean differences among true compliers.</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>source_reference <span class="ot">&lt;-</span> <span class="fu">with</span>(<span class="fu">rbind</span>(simdata1<span class="sc">$</span>alldata, simdata2<span class="sc">$</span>alldata),</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>((mean_y1 <span class="sc">-</span> mean_y0)[W0 <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> W1 <span class="sc">==</span> <span class="dv">1</span>]))</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>target_reference <span class="ot">&lt;-</span> <span class="fu">with</span>(<span class="fu">rbind</span>(sim_target_low<span class="sc">$</span>alldata, sim_target_high<span class="sc">$</span>alldata),</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>((mean_y1 <span class="sc">-</span> mean_y0)[W0 <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> W1 <span class="sc">==</span> <span class="dv">1</span>]))</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>source_draws <span class="ot">&lt;-</span> <span class="fu">mixed_effect_draws</span>(fit_sh)</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>source_ci <span class="ot">&lt;-</span> <span class="fu">quantile</span>(source_draws, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>transport_comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">Method =</span> <span class="fu">c</span>(<span class="st">"Source: simulated compliers"</span>, <span class="st">"Source: princeBART mixed effect"</span>,</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>             <span class="st">"Target: simulated compliers"</span>, <span class="st">"Target: general_BART"</span>),</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">Estimate =</span> <span class="fu">c</span>(source_reference, <span class="fu">mean</span>(source_draws), target_reference, transported<span class="sc">$</span>pate),</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">Lower =</span> <span class="fu">c</span>(<span class="cn">NA</span>, source_ci[<span class="dv">1</span>], <span class="cn">NA</span>, transported<span class="sc">$</span>ci[<span class="dv">1</span>]),</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">Upper =</span> <span class="fu">c</span>(<span class="cn">NA</span>, source_ci[<span class="dv">2</span>], <span class="cn">NA</span>, transported<span class="sc">$</span>ci[<span class="dv">2</span>])</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(transport_comparison, <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <thead>
@@ -482,33 +565,33 @@ Y\mid X,U,G,W &amp;\sim \mathrm{Bernoulli}\{
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Source: simulated compliers</td>
-<td style="text-align: right;">-0.311</td>
+<td style="text-align: right;">-0.160</td>
 <td style="text-align: right;">NA</td>
 <td style="text-align: right;">NA</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Source: princeBART mixed effect</td>
-<td style="text-align: right;">-0.239</td>
-<td style="text-align: right;">-0.411</td>
-<td style="text-align: right;">-0.056</td>
+<td style="text-align: right;">-0.171</td>
+<td style="text-align: right;">-0.236</td>
+<td style="text-align: right;">-0.104</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Target: simulated compliers</td>
-<td style="text-align: right;">-0.524</td>
+<td style="text-align: right;">-0.412</td>
 <td style="text-align: right;">NA</td>
 <td style="text-align: right;">NA</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Target: general_BART</td>
-<td style="text-align: right;">-0.120</td>
-<td style="text-align: right;">-0.521</td>
-<td style="text-align: right;">0.309</td>
+<td style="text-align: right;">-0.312</td>
+<td style="text-align: right;">-0.651</td>
+<td style="text-align: right;">0.102</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<p>The changed population mix can change the average effect. Generalization requires stable conditional complier effects and covariate overlap. Where the two populations overlap, changing their mix can also change the effect at a given X, so exact transportability is not guaranteed in this example. See <code>?general_BART</code> for survey weights and target subpopulations.</p>
+<p>Changing the X2 mix changes the target covariate distribution while preserving the conditional simulation models. Both X2 values occur in the source. Generalization requires stable conditional complier effects and covariate overlap. See <code>?general_BART</code> for survey weights and target subpopulations.</p>
 </section>
 <section id="count-and-ordinal-uptake" class="level2">
 <h2 class="anchored" data-anchor-id="count-and-ordinal-uptake">Count and ordinal uptake</h2>
