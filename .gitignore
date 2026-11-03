@@ -10,7 +10,6 @@ analyses/misc.rmd
 .Rproj.user
 .Rhistory
 .DS_Store
-*_files/
 *_cache/
 *guidelines.qmd
 */reproduce studies/Indonesia PKH/data
@@ -18,3 +17,4 @@ analyses/misc.rmd
 */reproduce studies/Minneapolis Domestic Violence/data
 */reproduce studies/Oregon Health Insurance/data
 *AI.txt
+*processed_data.rda
