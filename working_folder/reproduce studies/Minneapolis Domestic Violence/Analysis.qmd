@@ -24,6 +24,7 @@ $$
 Y_i=\mathbf{1}\{r_i<\operatorname{expit}(-b_{A_i})\},
 \qquad (b_1,b_2,b_3)=(2.11,1.42,1.21).
 $$
+$$(p1_,p_2,p_3)=(0.121,0.242,0.298)$$
 
 Principal stratification targets the non-arrest effect among compliers.
 This comparison evaluates methods on reconstructed outcomes, not independently

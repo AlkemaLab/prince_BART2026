@@ -146,55 +146,77 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>})</span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">"processed_data.rda"</span>)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(dat, <span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">all</span>(<span class="fu">c</span>(<span class="st">"hh_educ_baseline"</span>, <span class="st">"roof_type_baseline"</span>, <span class="st">"wall_type_baseline"</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>           <span class="st">"floor_type_baseline"</span>) <span class="sc">%in%</span> <span class="fu">names</span>(dat))) {</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">"Regenerate processed_data.rda with preprocessing.qmd to use cleaned covariates."</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(dat, <span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 5 × 116
-  iid             iid_w4 survey_round   L07 rid_merge kecamatan pkh_by_this_wave
-  &lt;chr&gt;           &lt;chr&gt;         &lt;dbl&gt; &lt;int&gt; &lt;chr&gt;         &lt;int&gt;            &lt;int&gt;
-1 00120010005000… 00120…            2     1 00110010…         1                1
-2 00120010005000… 00120…            2     1 00110010…         1                1
-3 00120020003000… 00120…            2     1 00110020…         1                0
-4 00120020004000… 00120…            2     1 00110020…         1                1
-5 00120030002000… 00120…            2     1 00110030…         1                1
-# ℹ 109 more variables: hh_educ_1_baseline_miss &lt;dbl&gt;,
-#   hh_educ_1_baseline_nm &lt;dbl&gt;, hh_educ_2_baseline_miss &lt;dbl&gt;,
-#   hh_educ_2_baseline_nm &lt;dbl&gt;, hh_educ_3_baseline_miss &lt;dbl&gt;,
-#   hh_educ_3_baseline_nm &lt;dbl&gt;, hh_educ_4_baseline_miss &lt;dbl&gt;,
-#   hh_educ_4_baseline_nm &lt;dbl&gt;, hh_educ_5_baseline_miss &lt;dbl&gt;,
-#   hh_educ_5_baseline_nm &lt;dbl&gt;, hh_educ_6_baseline_miss &lt;dbl&gt;,
-#   hh_educ_6_baseline_nm &lt;dbl&gt;, hh_educ_7_baseline_miss &lt;dbl&gt;, …</code></pre>
+<pre><code># A tibble: 5 × 27
+  iid   iid_w4 survey_round   L07 rid_merge kecamatan pkh_by_this_wave kabupaten
+  &lt;chr&gt; &lt;chr&gt;         &lt;dbl&gt; &lt;int&gt; &lt;chr&gt;         &lt;int&gt;            &lt;int&gt; &lt;fct&gt;    
+1 0012… 00120…            2     1 00110010…         1                1 75       
+2 0012… 00120…            2     1 00110010…         1                1 75       
+3 0012… 00120…            2     1 00110020…         1                0 75       
+4 0012… 00120…            2     1 00110020…         1                1 75       
+5 0012… 00120…            2     1 00110030…         1                1 75       
+# ℹ 19 more variables: hh_educ_baseline &lt;fct&gt;, roof_type_baseline &lt;fct&gt;,
+#   wall_type_baseline &lt;fct&gt;, floor_type_baseline &lt;fct&gt;,
+#   hh_head_agr_baseline &lt;dbl&gt;, hh_head_serv_baseline &lt;dbl&gt;,
+#   clean_water_baseline &lt;dbl&gt;, own_latrine_baseline &lt;dbl&gt;,
+#   square_latrine_baseline &lt;dbl&gt;, own_septic_tank_baseline &lt;dbl&gt;,
+#   electricity_PLN_baseline &lt;dbl&gt;, logpcexp_baseline &lt;dbl&gt;,
+#   hhsize_ln_baseline &lt;dbl&gt;, ich02_line &lt;dbl&gt;, ich02 &lt;hvn_lbll&gt;, …</code></pre>
 </div>
 </div>
 <ul>
 <li><strong>Outcomes:</strong> <code>good_assisted_delivery</code> and <code>delivery_facility</code>, both binary.</li>
 <li><strong>Treatment:</strong> <code>pkh_by_this_wave</code>, household PKH receipt by the 2013 wave.</li>
 <li><strong>Instrument:</strong> <code>L07</code>, original randomized rollout assignment.</li>
-<li><strong>Covariates:</strong> baseline household-head occupation/education, housing, water/sanitation, electricity, household size, expenditure, and missingness indicators. <code>kabupaten</code> supplies district adjustment; <code>kecamatan</code> identifies the subdistrict clusters. Linkage and pregnancy-source fields are not predictors.</li>
+<li><strong>Covariates:</strong> baseline household-head occupation/education, housing, water/sanitation, electricity, household size, and expenditure. Education and housing categories are factors, with source missing values stored as <code>NA</code>. <code>kabupaten</code> supplies district adjustment; <code>kecamatan</code> identifies the subdistrict clusters. Linkage and pregnancy-source fields are not predictors.</li>
 </ul>
 <section id="common-sample-and-model-specification" class="level2">
 <h2 class="anchored" data-anchor-id="common-sample-and-model-specification">Common sample and model specification</h2>
-<p>Retain the authors’ baseline coding and district adjustment. Constant predictors are omitted. Both outcomes use the same complete-case sample; multiple records from one mother remain, as in the pregnancy-record construction.</p>
+<p>Use the cleaned baseline predictors and district adjustment. Both outcomes use the same sample with observed outcomes, receipt, assignment, and geography. For fitting, missing factor values become a separate <code>Missing</code> level; missing numeric values are zero-filled with a missingness indicator, as in the paper. The loaded <code>dat</code> retains its original <code>NA</code> values. Constant predictors are omitted; multiple records from one mother remain.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>baseline_controls <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">"_baseline_(nm|miss)$"</span>, <span class="fu">names</span>(dat), <span class="at">value =</span> <span class="cn">TRUE</span>)</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>baseline_controls <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">"_baseline$"</span>, <span class="fu">names</span>(dat), <span class="at">value =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>required <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"good_assisted_delivery"</span>, <span class="st">"delivery_facility"</span>, <span class="st">"L07"</span>,</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>              <span class="st">"pkh_by_this_wave"</span>, <span class="st">"kabupaten"</span>, <span class="st">"kecamatan"</span>, baseline_controls)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> dat[<span class="fu">complete.cases</span>(dat[required]), ] <span class="sc">|&gt;</span> <span class="fu">droplevels</span>()</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>baseline_controls <span class="ot">&lt;-</span> baseline_controls[<span class="fu">vapply</span>(dat[baseline_controls],</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(x) <span class="fu">n_distinct</span>(x) <span class="sc">&gt;</span> <span class="dv">1</span>L, <span class="fu">logical</span>(<span class="dv">1</span>))]</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>covariate_rhs <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="fu">c</span>(<span class="st">"kabupaten"</span>, baseline_controls), <span class="at">collapse =</span> <span class="st">" + "</span>)</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove redundant linear controls from the IV formula, preserving their span.</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>control_matrix <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="fu">as.formula</span>(<span class="fu">paste</span>(<span class="st">"~"</span>, covariate_rhs)), <span class="at">data =</span> dat)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>control_qr <span class="ot">&lt;-</span> <span class="fu">qr</span>(control_matrix)</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>independent <span class="ot">&lt;-</span> <span class="fu">colnames</span>(control_matrix)[control_qr<span class="sc">$</span>pivot[<span class="fu">seq_len</span>(control_qr<span class="sc">$</span>rank)]]</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>iv_covariate_rhs <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="fu">c</span>(<span class="st">"kabupaten"</span>, <span class="fu">intersect</span>(baseline_controls, independent)), <span class="at">collapse =</span> <span class="st">" + "</span>)</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>settings <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">n_chains =</span> <span class="dv">4</span>L, <span class="at">workers =</span> <span class="dv">4</span>L, <span class="at">n_warmup =</span> <span class="dv">500</span>L,</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>                 <span class="at">n_samples =</span> <span class="dv">750</span>L, <span class="at">n_trees =</span> <span class="dv">50</span>L)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>              <span class="st">"pkh_by_this_wave"</span>, <span class="st">"kabupaten"</span>, <span class="st">"kecamatan"</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>model_dat <span class="ot">&lt;-</span> dat[<span class="fu">complete.cases</span>(dat[required]), ] <span class="sc">|&gt;</span> <span class="fu">droplevels</span>()</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (variable <span class="cf">in</span> baseline_controls) {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  value <span class="ot">&lt;-</span> model_dat[[variable]]</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">anyNA</span>(value)) <span class="cf">next</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.factor</span>(value)) {</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    model_dat[[variable]] <span class="ot">&lt;-</span> <span class="fu">factor</span>(</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">replace</span>(<span class="fu">as.character</span>(value), <span class="fu">is.na</span>(value), <span class="st">"Missing"</span>),</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> <span class="fu">c</span>(<span class="fu">levels</span>(value), <span class="st">"Missing"</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    model_dat[[<span class="fu">paste0</span>(variable, <span class="st">"_miss"</span>)]] <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(<span class="fu">is.na</span>(value))</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    model_dat[[variable]][<span class="fu">is.na</span>(value)] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>baseline_controls <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">"_baseline(_miss)?$"</span>, <span class="fu">names</span>(model_dat), <span class="at">value =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>baseline_controls <span class="ot">&lt;-</span> baseline_controls[<span class="fu">vapply</span>(model_dat[baseline_controls],</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(x) <span class="fu">n_distinct</span>(x) <span class="sc">&gt;</span> <span class="dv">1</span>L, <span class="fu">logical</span>(<span class="dv">1</span>))]</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>covariate_rhs <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="fu">c</span>(<span class="st">"kabupaten"</span>, baseline_controls), <span class="at">collapse =</span> <span class="st">" + "</span>)</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Select independent encoded columns, including factor contrasts, for 2SLS.</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>control_matrix <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="fu">as.formula</span>(<span class="fu">paste</span>(<span class="st">"~"</span>, covariate_rhs)), <span class="at">data =</span> model_dat)</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>control_qr <span class="ot">&lt;-</span> <span class="fu">qr</span>(control_matrix)</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>independent <span class="ot">&lt;-</span> <span class="fu">colnames</span>(control_matrix)[control_qr<span class="sc">$</span>pivot[<span class="fu">seq_len</span>(control_qr<span class="sc">$</span>rank)]]</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>independent <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(independent, <span class="st">"(Intercept)"</span>)</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>iv_controls <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(control_matrix[, independent, <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>iv_dat <span class="ot">&lt;-</span> <span class="fu">cbind</span>(model_dat[<span class="fu">c</span>(<span class="st">"good_assisted_delivery"</span>, <span class="st">"delivery_facility"</span>,</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>                           <span class="st">"L07"</span>, <span class="st">"pkh_by_this_wave"</span>)], iv_controls)</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>iv_covariate_rhs <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="fu">sprintf</span>(<span class="st">"`%s`"</span>, <span class="fu">names</span>(iv_controls)), <span class="at">collapse =</span> <span class="st">" + "</span>)</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>settings <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">n_chains =</span> <span class="dv">4</span>L, <span class="at">workers =</span> <span class="dv">4</span>L, <span class="at">n_warmup =</span> <span class="dv">500</span>L,</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>                 <span class="at">n_samples =</span> <span class="dv">750</span>L, <span class="at">n_trees =</span> <span class="dv">50</span>L)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
-<p>The common sample contains <strong>2154 delivery records</strong> in <strong>357 subdistricts</strong>. Instrument propensity is estimated internally. IV standard errors are clustered by subdistrict. princeBART uses the same predictors flexibly, but its likelihood does not adjust for clustering. The credible intervals therefore do not represent cluster-adjusted uncertainty. Redundant dummy and missingness-indicator columns are omitted from the IV formula; the linear adjustment space is unchanged.</p>
+<p>The common sample contains <strong>2154 delivery records</strong> in <strong>357 subdistricts</strong>. Instrument propensity is estimated internally. IV standard errors are clustered by subdistrict. princeBART uses the same predictors flexibly, but its likelihood does not adjust for clustering. The credible intervals therefore do not represent cluster-adjusted uncertainty. Factor contrasts and missingness indicators can be redundant; the IV model uses an independent set of columns with the same linear adjustment space. The factor representation preserves the authors’ adjustment while simplifying the saved data.</p>
 </section>
 <section id="estimation-and-comparison" class="level2">
 <h2 class="anchored" data-anchor-id="estimation-and-comparison">Estimation and comparison</h2>
@@ -205,9 +227,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>analyze_pkh <span class="ot">&lt;-</span> <span class="cf">function</span>(outcome, published_estimate, published_se) {</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  iv_formula <span class="ot">&lt;-</span> <span class="fu">as.formula</span>(<span class="fu">paste</span>(outcome, <span class="st">"~ pkh_by_this_wave +"</span>, iv_covariate_rhs,</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                                  <span class="st">"| L07 +"</span>, iv_covariate_rhs))</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  fit_iv <span class="ot">&lt;-</span> <span class="fu">ivreg</span>(iv_formula, <span class="at">data =</span> dat)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  fit_iv <span class="ot">&lt;-</span> <span class="fu">ivreg</span>(iv_formula, <span class="at">data =</span> iv_dat)</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  iv_estimate <span class="ot">&lt;-</span> <span class="fu">unname</span>(<span class="fu">coef</span>(fit_iv)[<span class="st">"pkh_by_this_wave"</span>])</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  iv_se <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">vcovCL</span>(fit_iv, <span class="at">cluster =</span> dat<span class="sc">$</span>kecamatan,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  iv_se <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">vcovCL</span>(fit_iv, <span class="at">cluster =</span> model_dat<span class="sc">$</span>kecamatan,</span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                       <span class="at">type =</span> <span class="st">"HC1"</span>, <span class="at">cadjust =</span> <span class="cn">TRUE</span>)[<span class="st">"pkh_by_this_wave"</span>, <span class="st">"pkh_by_this_wave"</span>])</span>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  old_plan <span class="ot">&lt;-</span> <span class="fu">plan</span>()</span>
@@ -216,7 +238,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">20261102</span>)</span>
 <span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  fit_ps <span class="ot">&lt;-</span> <span class="fu">prince_BART</span>(</span>
 <span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.formula</span>(<span class="fu">paste</span>(outcome, <span class="st">"~"</span>, covariate_rhs, <span class="st">"| L07 | pkh_by_this_wave"</span>)),</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> dat, <span class="at">uptake_type =</span> <span class="st">"binary"</span>, <span class="at">n_chains =</span> settings<span class="sc">$</span>n_chains,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> model_dat, <span class="at">uptake_type =</span> <span class="st">"binary"</span>, <span class="at">n_chains =</span> settings<span class="sc">$</span>n_chains,</span>
 <span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">workers =</span> settings<span class="sc">$</span>workers, <span class="at">n_warmup =</span> settings<span class="sc">$</span>n_warmup,</span>
 <span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_samples =</span> settings<span class="sc">$</span>n_samples, <span class="at">n_trees =</span> settings<span class="sc">$</span>n_trees, <span class="at">keep_trees =</span> <span class="cn">FALSE</span></span>
 <span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  )</span>
@@ -269,7 +291,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   &lt;chr&gt;                                  &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;          
 1 Published 2SLS                          23.3    11.7      34.9 95% CI (recons…
 2 Reconstructed 2SLS                      23.3    11.5      35.1 95% clustered …
-3 princeBART mixed complier effect        18.7     9.02     28.4 95% CrI        </code></pre>
+3 princeBART mixed complier effect        18.4     9.34     27.7 95% CrI        </code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
@@ -279,7 +301,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 1 × 4
   variable         rhat ess_bulk ess_tail
   &lt;chr&gt;           &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
-1 Complier effect  1.02     516.     810.</code></pre>
+1 Complier effect  1.01     445.    1095.</code></pre>
 </div>
 </div>
 </section>
@@ -294,11 +316,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 5 × 6
   segment                                   mean ci_lower ci_upper     n n_group
   &lt;chr&gt;                                    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
-1 "overall"                               0.187    0.0902    0.284  2154    741.
-2 "floor_type == 7_baseline_nm &amp; kabupat… 0.0378  -0.114     0.192   232    119.
-3 "floor_type == 7_baseline_nm &amp; kabupat… 0.149    0.0180    0.287   373    162.
-4 "floor_type != 7_baseline_nm &amp; roof_ty… 0.183    0.0389    0.327   595    214.
-5 "floor_type != 7_baseline_nm &amp; roof_ty… 0.290    0.154     0.439   954    247.</code></pre>
+1 "overall"                               0.184    0.0934    0.277  2154   738. 
+2 "floor_type_baseline %in% c(\"4\", \"6… 0.0272  -0.0994    0.160   352   175. 
+3 "floor_type_baseline %in% c(\"4\", \"6… 0.159    0.0526    0.270   507   231. 
+4 "floor_type_baseline %in% c(\"1\", \"2… 0.199    0.0386    0.365   305    97.3
+5 "floor_type_baseline %in% c(\"1\", \"2… 0.320    0.185     0.462   990   234. </code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
@@ -330,7 +352,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   &lt;chr&gt;                                  &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;          
 1 Published 2SLS                          17.1     4.16     30.0 95% CI (recons…
 2 Reconstructed 2SLS                      17.1     3.96     30.3 95% clustered …
-3 princeBART mixed complier effect        13.7     3.22     24.4 95% CrI        </code></pre>
+3 princeBART mixed complier effect        13.6     2.80     23.6 95% CrI        </code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
@@ -340,7 +362,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 1 × 4
   variable         rhat ess_bulk ess_tail
   &lt;chr&gt;           &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
-1 Complier effect  1.01     425.    1010.</code></pre>
+1 Complier effect  1.01     366.     974.</code></pre>
 </div>
 </div>
 </section>
@@ -352,11 +374,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>facility<span class="sc">$</span>effects</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 2 × 6
-  segment    mean ci_lower ci_upper     n n_group
-  &lt;chr&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
-1 overall   0.137   0.0322    0.244  2154    731.
-2 all units 0.137   0.0322    0.244  2154    731.</code></pre>
+<pre><code># A tibble: 5 × 6
+  segment                                   mean ci_lower ci_upper     n n_group
+  &lt;chr&gt;                                    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
+1 "overall"                               0.136   0.0280     0.236  2154    734.
+2 "wall_type_baseline %in% c(\"3\", \"5… -0.0440 -0.210      0.130   274    124.
+3 "wall_type_baseline %in% c(\"3\", \"5…  0.119  -0.00702    0.244   615    282.
+4 "own_ != latrine_baseline &amp; wall_type…  0.170   0.0161     0.323   688    185.
+5 "own_ == latrine_baseline &amp; wall_type…  0.283   0.132      0.449   577    144.</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>

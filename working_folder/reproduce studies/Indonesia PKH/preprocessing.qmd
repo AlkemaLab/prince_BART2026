@@ -33,6 +33,38 @@ dat <- local({
     filter(survey_round == 2, !is.na(L07))
   stopifnot(!anyDuplicated(mothers$iid_w4))
 
+  # Undo the authors' zero filling using the source missingness flags.
+  value_columns <- grep("_baseline_nm$", controls, value = TRUE)
+  for (variable in value_columns) {
+    missing <- mothers[[sub("_nm$", "_miss", variable)]]
+    value <- as.numeric(mothers[[variable]])
+    value[is.na(missing) | missing == 1] <- NA_real_
+    mothers[[variable]] <- value
+  }
+
+  # Each complete category block contains exactly one active dummy.
+  category_columns <- character()
+  for (prefix in c("hh_educ_", "roof_type", "wall_type", "floor_type")) {
+    columns <- grep(paste0("^", prefix, "[0-9]+_baseline_nm$"),
+                    value_columns, value = TRUE)
+    categories <- as.integer(sub("_baseline_nm$", "", sub(prefix, "", columns)))
+    columns <- columns[order(categories)]
+    categories <- sort(categories)
+    block <- as.matrix(mothers[columns])
+    observed <- complete.cases(block)
+    stopifnot(all(block[observed, , drop = FALSE] %in% 0:1),
+              all(rowSums(block[observed, , drop = FALSE]) == 1))
+    category <- rep(NA_integer_, nrow(mothers))
+    category[observed] <- categories[max.col(block[observed, , drop = FALSE])]
+    mothers[[paste0(sub("_$", "", prefix), "_baseline")]] <-
+      factor(category, levels = categories)
+    category_columns <- c(category_columns, columns)
+  }
+  for (variable in setdiff(value_columns, category_columns)) {
+    mothers[[sub("_nm$", "", variable)]] <- mothers[[variable]]
+  }
+  mothers <- mothers |> select(-all_of(controls))
+
   pregnancies <- read_dta(
     "data/data/raw/Wave IV/I_CH.dta",
     col_select = c("iid", "ich02_line", "ich02", "ich24", "ich25")
@@ -44,7 +76,6 @@ dat <- local({
       pkh_by_this_wave = as.integer(pkh_by_this_wave),
       kabupaten = factor(as.integer(kabupaten)),
       kecamatan = as.integer(kecamatan),
-      across(all_of(controls), as.numeric),
       good_assisted_delivery = if_else(
         is.na(ich25) | trimws(ich25) == "", NA_integer_,
         as.integer(grepl("A|B", ich25))
@@ -63,45 +94,25 @@ head(dat, 5)
 
 The unit is a pregnancy record, so a mother can contribute more than one record.
 Outcomes are observed for deliveries; ongoing pregnancies and other inapplicable
-records can have missing outcomes. The analysis uses one common complete-case
-sample for both outcomes and both estimation methods.
+records can have missing outcomes. The analysis uses a common sample with observed
+outcomes, treatment, instrument, and geography, and handles missing baseline
+predictors during model preparation.
 
 `good_assisted_delivery` follows the authors' `ich25` coding: doctor (`A`) or
 midwife (`B`). `delivery_facility` follows `ich24 < 7`; missing responses remain
 missing. The treatment is **ever received PKH by the 2013 wave**, not just current
-receipt. Controls ending in `_nm` are the authors' baseline values with missing
-values replaced by zero; paired `_miss` columns indicate that replacement.
+receipt. Baseline education, roof, wall, and floor variables are unordered factors;
+their levels retain the authors' dummy category indices, not questionnaire codes.
+Other baseline controls remain numeric. Source missingness is restored to `NA`,
+and the old dummy columns and missingness flags are removed from the saved data.
 
 # Variables and availability
 
-Missing percentages describe the linked records before complete-case exclusions.
-For zero-filled controls, `Source_missing_percent` reports the original baseline
-missingness indicated by the paired flag; blanks mean not applicable. Zero-filled
-values are not evidence that the underlying baseline measure was observed.
+Missing percentages describe the linked records before analysis exclusions and
+include the restored baseline missing values.
 
 ```{r variable-availability}
 local({
-  describe_control <- function(variable) {
-    base <- sub("_baseline_(nm|miss)$", "", variable)
-    description <- case_when(
-      grepl("^hh_educ_", base) ~ paste("Head education indicator", sub("hh_educ_", "", base)),
-      grepl("^roof_type", base) ~ paste("Roof-material indicator", sub("roof_type", "", base)),
-      grepl("^wall_type", base) ~ paste("Wall-material indicator", sub("wall_type", "", base)),
-      grepl("^floor_type", base) ~ paste("Floor-material indicator", sub("floor_type", "", base)),
-      base == "hh_head_agr" ~ "Household head in agriculture",
-      base == "hh_head_serv" ~ "Household head in services",
-      base == "clean_water" ~ "Clean water",
-      base == "own_latrine" ~ "Own latrine",
-      base == "square_latrine" ~ "Latrine type indicator",
-      base == "own_septic_tank" ~ "Own septic tank",
-      base == "electricity_PLN" ~ "PLN electricity connection",
-      base == "logpcexp" ~ "Log per-capita expenditure",
-      base == "hhsize_ln" ~ "Log household size",
-      TRUE ~ base
-    )
-    paste("Baseline:", description,
-          if (grepl("_miss$", variable)) "(missingness flag)" else "(zero-filled value)")
-  }
   labels <- c(
     iid = "Woman identifier aligned across survey waves", iid_w4 = "2013 woman identifier",
     rid_merge = "Household linkage identifier", survey_round = "Survey round; 2 denotes 2013",
@@ -111,7 +122,20 @@ local({
     ich02_line = "Pregnancy record number", ich02 = "Pregnancy status/type",
     ich24 = "Delivery location code", ich25 = "Delivery-attendant response",
     good_assisted_delivery = "Delivery assisted by a doctor or midwife",
-    delivery_facility = "Delivery at a health facility, authors' coding"
+    delivery_facility = "Delivery at a health facility, authors' coding",
+    hh_educ_baseline = "Baseline household-head education category",
+    roof_type_baseline = "Baseline roof-material category",
+    wall_type_baseline = "Baseline wall-material category",
+    floor_type_baseline = "Baseline floor-material category",
+    hh_head_agr_baseline = "Baseline household head in agriculture",
+    hh_head_serv_baseline = "Baseline household head in services",
+    clean_water_baseline = "Baseline clean water",
+    own_latrine_baseline = "Baseline own latrine",
+    square_latrine_baseline = "Baseline latrine type indicator",
+    own_septic_tank_baseline = "Baseline own septic tank",
+    electricity_PLN_baseline = "Baseline PLN electricity connection",
+    logpcexp_baseline = "Baseline log per-capita expenditure",
+    hhsize_ln_baseline = "Baseline log household size"
   )
   variables <- tibble(Variable = names(dat)) |>
     mutate(
@@ -124,23 +148,17 @@ local({
         Variable == "pkh_by_this_wave" ~ "Treatment",
         Variable == "kabupaten" ~ "District adjustment",
         Variable == "kecamatan" ~ "Cluster identifier",
-        grepl("_baseline_(nm|miss)$", Variable) ~ "Baseline control",
+        grepl("_baseline$", Variable) ~ "Baseline control",
         TRUE ~ "Linkage, selection, or source field"
       ),
-      Description = vapply(Variable, function(variable) {
-        if (variable %in% names(labels)) unname(labels[variable]) else describe_control(variable)
+      Description = unname(labels[Variable]),
+      Type = vapply(dat, function(x) {
+        if (is.factor(x)) return(paste("Factor:", nlevels(x), "levels"))
+        if (is.numeric(x) && all(na.omit(x) %in% 0:1)) return("Binary")
+        class(x)[1]
       }, character(1)),
-      Availability = case_when(
-        grepl("_baseline_nm$", Variable) ~ "Available; source values zero-filled where missing",
-        grepl("_baseline_miss$", Variable) ~ "Available; source-missing indicator",
-        TRUE ~ "Available where recorded/applicable"
-      ),
-      Missing_percent = vapply(dat, function(x) round(100 * mean(is.na(x)), 2), numeric(1)),
-      Source_missing_percent = vapply(Variable, function(variable) {
-        if (!grepl("_baseline_nm$", variable)) return("")
-        flag <- dat[[sub("_nm$", "_miss", variable)]]
-        sprintf("%.2f", 100 * mean(is.na(flag) | flag == 1))
-      }, character(1))
+      Availability = "Available where recorded/applicable; missing values are NA",
+      Missing_percent = vapply(dat, function(x) round(100 * mean(is.na(x)), 2), numeric(1))
     )
   knitr::kable(variables, row.names = FALSE)
 })

@@ -34,6 +34,10 @@ suppressPackageStartupMessages({
 })
 
 load("processed_data.rda")
+if (!all(c("hh_educ_baseline", "roof_type_baseline", "wall_type_baseline",
+           "floor_type_baseline") %in% names(dat))) {
+  stop("Regenerate processed_data.rda with preprocessing.qmd to use cleaned covariates.")
+}
 head(dat, 5)
 ```
 
@@ -41,40 +45,63 @@ head(dat, 5)
 - **Treatment:** `pkh_by_this_wave`, household PKH receipt by the 2013 wave.
 - **Instrument:** `L07`, original randomized rollout assignment.
 - **Covariates:** baseline household-head occupation/education, housing,
-  water/sanitation, electricity, household size, expenditure, and missingness
-  indicators. `kabupaten` supplies district adjustment; `kecamatan` identifies
+  water/sanitation, electricity, household size, and expenditure. Education and
+  housing categories are factors, with source missing values stored as `NA`.
+  `kabupaten` supplies district adjustment; `kecamatan` identifies
   the subdistrict clusters. Linkage and pregnancy-source fields are not predictors.
 
 ## Common sample and model specification
 
-Retain the authors' baseline coding and district adjustment. Constant predictors
-are omitted. Both outcomes use the same complete-case sample; multiple records
-from one mother remain, as in the pregnancy-record construction.
+Use the cleaned baseline predictors and district adjustment. Both outcomes use
+the same sample with observed outcomes, receipt, assignment, and geography.
+For fitting, missing factor values become a separate `Missing` level; missing
+numeric values are zero-filled with a missingness indicator, as in the paper.
+The loaded `dat` retains its original `NA` values. Constant predictors are omitted;
+multiple records from one mother remain.
 
 ```{r prepare-analysis}
-baseline_controls <- grep("_baseline_(nm|miss)$", names(dat), value = TRUE)
+baseline_controls <- grep("_baseline$", names(dat), value = TRUE)
 required <- c("good_assisted_delivery", "delivery_facility", "L07",
-              "pkh_by_this_wave", "kabupaten", "kecamatan", baseline_controls)
-dat <- dat[complete.cases(dat[required]), ] |> droplevels()
-baseline_controls <- baseline_controls[vapply(dat[baseline_controls],
+              "pkh_by_this_wave", "kabupaten", "kecamatan")
+model_dat <- dat[complete.cases(dat[required]), ] |> droplevels()
+for (variable in baseline_controls) {
+  value <- model_dat[[variable]]
+  if (!anyNA(value)) next
+  if (is.factor(value)) {
+    model_dat[[variable]] <- factor(
+      replace(as.character(value), is.na(value), "Missing"),
+      levels = c(levels(value), "Missing")
+    )
+  } else {
+    model_dat[[paste0(variable, "_miss")]] <- as.integer(is.na(value))
+    model_dat[[variable]][is.na(value)] <- 0
+  }
+}
+baseline_controls <- grep("_baseline(_miss)?$", names(model_dat), value = TRUE)
+baseline_controls <- baseline_controls[vapply(model_dat[baseline_controls],
   function(x) n_distinct(x) > 1L, logical(1))]
 covariate_rhs <- paste(c("kabupaten", baseline_controls), collapse = " + ")
-# Remove redundant linear controls from the IV formula, preserving their span.
-control_matrix <- model.matrix(as.formula(paste("~", covariate_rhs)), data = dat)
+# Select independent encoded columns, including factor contrasts, for 2SLS.
+control_matrix <- model.matrix(as.formula(paste("~", covariate_rhs)), data = model_dat)
 control_qr <- qr(control_matrix)
 independent <- colnames(control_matrix)[control_qr$pivot[seq_len(control_qr$rank)]]
-iv_covariate_rhs <- paste(c("kabupaten", intersect(baseline_controls, independent)), collapse = " + ")
+independent <- setdiff(independent, "(Intercept)")
+iv_controls <- as.data.frame(control_matrix[, independent, drop = FALSE])
+iv_dat <- cbind(model_dat[c("good_assisted_delivery", "delivery_facility",
+                           "L07", "pkh_by_this_wave")], iv_controls)
+iv_covariate_rhs <- paste(sprintf("`%s`", names(iv_controls)), collapse = " + ")
 settings <- list(n_chains = 4L, workers = 4L, n_warmup = 500L,
                  n_samples = 750L, n_trees = 50L)
 ```
 
-The common sample contains **`r nrow(dat)` delivery records** in
-**`r n_distinct(dat$kecamatan)` subdistricts**. Instrument propensity is estimated
+The common sample contains **`r nrow(model_dat)` delivery records** in
+**`r n_distinct(model_dat$kecamatan)` subdistricts**. Instrument propensity is estimated
 internally. IV standard errors are clustered by subdistrict. princeBART uses the
 same predictors flexibly, but its likelihood does not adjust for clustering.
 The credible intervals therefore do not represent cluster-adjusted uncertainty.
-Redundant dummy and missingness-indicator columns are omitted from the IV formula;
-the linear adjustment space is unchanged.
+Factor contrasts and missingness indicators can be redundant; the IV model uses
+an independent set of columns with the same linear adjustment space. The factor
+representation preserves the authors' adjustment while simplifying the saved data.
 
 ## Estimation and comparison
 
@@ -89,9 +116,9 @@ necessary; selection into observed delivery records also limits interpretation.
 analyze_pkh <- function(outcome, published_estimate, published_se) {
   iv_formula <- as.formula(paste(outcome, "~ pkh_by_this_wave +", iv_covariate_rhs,
                                   "| L07 +", iv_covariate_rhs))
-  fit_iv <- ivreg(iv_formula, data = dat)
+  fit_iv <- ivreg(iv_formula, data = iv_dat)
   iv_estimate <- unname(coef(fit_iv)["pkh_by_this_wave"])
-  iv_se <- sqrt(vcovCL(fit_iv, cluster = dat$kecamatan,
+  iv_se <- sqrt(vcovCL(fit_iv, cluster = model_dat$kecamatan,
                        type = "HC1", cadjust = TRUE)["pkh_by_this_wave", "pkh_by_this_wave"])
 
   old_plan <- plan()
@@ -100,7 +127,7 @@ analyze_pkh <- function(outcome, published_estimate, published_se) {
   set.seed(20261102)
   fit_ps <- prince_BART(
     as.formula(paste(outcome, "~", covariate_rhs, "| L07 | pkh_by_this_wave")),
-    data = dat, uptake_type = "binary", n_chains = settings$n_chains,
+    data = model_dat, uptake_type = "binary", n_chains = settings$n_chains,
     workers = settings$workers, n_warmup = settings$n_warmup,
     n_samples = settings$n_samples, n_trees = settings$n_trees, keep_trees = FALSE
   )
